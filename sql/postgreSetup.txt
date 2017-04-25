@@ -1,0 +1,18 @@
+Installing postgre SQL:
+
+Databases:
+CS135
+postgres
+
+Commands:
+Start/stop:
+brew services start postgresql
+brew services stop postgresql
+
+Adding PG admin file:
+psql postgres -c 'CREATE EXTENSION "adminpack";'
+
+Install PGAdmin4 
+
+Connect to database using:
+psql CS135 
