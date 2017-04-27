@@ -1,4 +1,4 @@
-CREATE TABLE public."Accounts"
+CREATE TABLE public.Accounts
 (
     "AccountID" integer NOT NULL DEFAULT nextval('"Accounts_AID_seq"'::regclass),
     "Username" text COLLATE pg_catalog."default",
@@ -13,5 +13,5 @@ WITH (
 )
 TABLESPACE pg_default;
 
-ALTER TABLE public."Accounts"
+ALTER TABLE public.Accounts
     OWNER to kyleziegler;

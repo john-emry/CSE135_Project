@@ -1,4 +1,4 @@
-CREATE TABLE public."Products"
+CREATE TABLE public.Products
 (
     "ProductID" integer NOT NULL DEFAULT nextval('"Products_ProductID_seq"'::regclass),
     "SKU" text COLLATE pg_catalog."default" NOT NULL,
@@ -11,5 +11,5 @@ WITH (
 )
 TABLESPACE pg_default;
 
-ALTER TABLE public."Products"
+ALTER TABLE public.Products
     OWNER to kyleziegler;

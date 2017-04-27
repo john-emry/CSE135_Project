@@ -1,4 +1,4 @@
-CREATE TABLE public."Category"
+CREATE TABLE public.Category
 (
     "CategoryID" serial NOT NULL,
     "Name" text NOT NULL,
@@ -9,5 +9,5 @@ WITH (
     OIDS = FALSE
 );
 
-ALTER TABLE public."Category"
+ALTER TABLE public.Category
     OWNER to kyleziegler;
