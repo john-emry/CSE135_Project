@@ -6,7 +6,6 @@ import java.sql.*;
 
 import org.omg.CORBA.Request;
 import org.postgresql.*;
-import org.json.*;
 import java.io.*;
 import java.util.Enumeration;
 import java.util.Timer;
@@ -56,7 +55,7 @@ public class DB extends HttpServlet {
         Enumeration<String> enumer = request.getParameterNames();
         while(enumer.hasMoreElements()) {
             if (enumer.nextElement().equals("username")) {
-                login(request.getParameter("username"), out);
+                login(request.getParameter("username"), out, response);
                 return;
             }
         }
@@ -99,7 +98,7 @@ public class DB extends HttpServlet {
         }
     }
 
-    private void login(String user, PrintWriter out) {
+    private void login(String user, PrintWriter out, HttpServletResponse response) {
         String query = "SELECT * FROM Accounts WHERE \"Username\"=?";
         PreparedStatement requestQuery;
 
@@ -108,6 +107,7 @@ public class DB extends HttpServlet {
             requestQuery.setString(1, user);
             rset = requestQuery.executeQuery();
             if (rset != null && rset.next()) {
+                response.sendRedirect("main.jsp");
                 out.print("<h1>Success! Found User: " + rset.getString("Username") + "</h1>");
             }
         } catch (Exception e) {
