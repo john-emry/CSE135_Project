@@ -15,6 +15,5 @@ INSERT INTO public.order_history_products("ProductID", "OrderHistoryID", "Quanti
 Update public.order_history
 	Set "OrderHistoryProductsID" = LASTVAL() 
     WHERE "OrderHistoryID" = tempID;
-   
 
 END $$;
