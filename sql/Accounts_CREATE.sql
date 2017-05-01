@@ -1,6 +1,6 @@
 CREATE TABLE public.accounts
 (
-    "AccountID" integer NOT NULL DEFAULT nextval('"Accounts_AID_seq"'::regclass),
+    "AccountID" serial NOT NULL,
     "Username" text COLLATE pg_catalog."default",
     "Age" integer,
     "State" text COLLATE pg_catalog."default",

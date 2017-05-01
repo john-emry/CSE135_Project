@@ -1,9 +1,9 @@
 CREATE TABLE public.products
 (
-    "ProductID" integer NOT NULL DEFAULT nextval('"Products_ProductID_seq"'::regclass),
+    "ProductID" serial NOT NULL,
     "SKU" text COLLATE pg_catalog."default" NOT NULL,
     "CategoryID" integer NOT NULL,
-    "Name" text NOT NUL,
+    "Name" text NOT NULL,
     "Price" text COLLATE pg_catalog."default" NOT NULL,
     CONSTRAINT "Products_pkey" PRIMARY KEY ("ProductID")
 )

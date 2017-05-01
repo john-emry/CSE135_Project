@@ -1,6 +1,6 @@
 CREATE TABLE public.categories
 (
-    "CategoryID" integer NOT NULL DEFAULT nextval('"Categories_CategoryID_seq"'::regclass),
+    "CategoryID" serial NOT NULL,
     "Name" text COLLATE pg_catalog."default" NOT NULL,
     "Description" text COLLATE pg_catalog."default" NOT NULL,
     "AccountID" integer NOT NULL,
