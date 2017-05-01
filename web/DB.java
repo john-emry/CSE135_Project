@@ -83,10 +83,12 @@ public class DB extends HttpServlet {
                         "        function setURL(url) {\n" +
                         "            document.getElementById('iframe').src = url;\n" +
                         "        }\n" +
-                        "    </script>\n" +
-                        "    <input type=\"button\" onclick=\"setURL('/DB?func=categories')\" value=\"Categories\"/><br/>\n" +
-                        "    <input type=\"button\" onclick=\"setURL('/DB?func=products')\" value=\"Products\"/><br/>\n" +
-                        "    <input type=\"button\" onclick=\"setURL('/DB?func=browse')\" value=\"Products Browsing\"/><br/>\n" +
+                        "    </script>\n");
+                if (request.getSession().getAttribute("Role").equals("Owner")) {
+                out.println("    <input type=\"button\" onclick=\"setURL('/DB?func=categories')\" value=\"Categories\"/><br/>\n" +
+                        "    <input type=\"button\" onclick=\"setURL('/DB?func=products')\" value=\"Products\"/><br/>\n");
+                }
+                 out.println(       "    <input type=\"button\" onclick=\"setURL('/DB?func=browse')\" value=\"Products Browsing\"/><br/>\n" +
                         "    <input type=\"button\" onclick=\"setURL('/DB?func=order_history')\" value=\"Product Order\"/><br/>\n" +
                         "    <input type=\"button\" onclick=\"setURL('/DB?func=cart')\" value=\"Buy Shopping Cart\"/><br/>\n" +
                         "</div>\n" +
@@ -109,9 +111,17 @@ public class DB extends HttpServlet {
                         "    <title>Categories</title>\n" +
                         "</head>\n" +
                         "<body>\n" +
-                        "<div class=\"center\">\n" +
-                        "   <h1>Categories<h1>\n" +
-                        "</div>\n" +
+                        "<div class=\"center\">\n");
+                try {
+                    if (request.getSession().getAttribute("Role").equals("Owner")) {
+                        out.println("this page is available to owners only");
+                    } else {
+                        out.println("<h1>Categories  <h1>\n");
+                    }
+                } catch (Exception e) {
+                    out.println("this page is available to owners only");
+                }
+                out.println("</div>\n" +
                         "\n" +
                         "</body>\n" +
                         "</html>");
@@ -153,9 +163,17 @@ public class DB extends HttpServlet {
                         "    <title>Products</title>\n" +
                         "</head>\n" +
                         "<body>\n" +
-                        "<div class=\"center\">\n" +
-                        "   <h1>Products<h1>\n" +
-                        "</div>\n" +
+                        "<div class=\"center\">\n");
+                try {
+                    if (request.getSession().getAttribute("Role").equals("Owner")) {
+                        out.println("this page is available to owners only");
+                    } else {
+                        out.println("<h1>Products<h1>\n");
+                    }
+                } catch (Exception e) {
+                    out.println("this page is available to owners only");
+                }
+                out.println("</div>\n" +
                         "\n" +
                         "</body>\n" +
                         "</html>");
@@ -241,7 +259,8 @@ public class DB extends HttpServlet {
                         "        }\n" +
                         "        .frame {\n" +
                         "            position: absolute;\n" +
-                        "            left: 200px;\n" +
+                        "            padding: 10px;\n" +
+                        "            left: 210px;\n" +
                         "            right: 10px;\n" +
                         "            top: 10px;\n" +
                         "            bottom: 10px;\n" +
@@ -254,25 +273,23 @@ public class DB extends HttpServlet {
                         "</head>\n" +
                         "<body>\n" +
                         "<div class=\"frame\">\n" +
-                        "    <iframe id=\"iframe\" src=\"/DB?func=categories\" style=\"width:100%; height: 100%\"></iframe>\n" +
                         "</div>\n" +
                         "<div class=\"left\">\n" +
-                        "    <script>\n" +
-                        "        function setURL(url) {\n" +
-                        "            document.getElementById('iframe').src = url;\n" +
-                        "        }\n" +
-                        "    </script>\n" +
-                        "    <input type=\"button\" onclick=\"setURL('/DB?func=categories')\" value=\"Categories\"/><br/>\n" +
-                        "    <input type=\"button\" onclick=\"setURL('/DB?func=products')\" value=\"Products\"/><br/>\n" +
-                        "    <input type=\"button\" onclick=\"setURL('/DB?func=browse')\" value=\"Products Browsing\"/><br/>\n" +
-                        "    <input type=\"button\" onclick=\"setURL('/DB?func=order_history')\" value=\"Product Order\"/><br/>\n" +
-                        "    <input type=\"button\" onclick=\"setURL('/DB?func=cart')\" value=\"Buy Shopping Cart\"/><br/>\n" +
+                        "<form action=\"/DB\" method=\"post\">\n");
+                if (request.getSession().getAttribute("Role").equals("Owner")) {
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
+                            "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
+                }
+                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
+                        "</form>\n" +
                         "</div>\n" +
                         "\n" +
                         "</body>\n" +
                         "</html>");
                 break;
-            case "categories":
+            case "Categories":
                 out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
                         "<head>\n" +
                         "    <style>\n" +
@@ -281,20 +298,52 @@ public class DB extends HttpServlet {
                         "            margin: auto;\n" +
                         "            padding: 10px;\n" +
                         "        }\n" +
+                        "        .left {\n" +
+                        "            text-align: left;\n" +
+                        "            width: 200px;\n" +
+                        "            padding: 0px;\n" +
+                        "            top: 10px;\n" +
+                        "            border: 3px solid #660000;\n" +
+                        "        }\n" +
+                        "        .frame {\n" +
+                        "            text-align: center;\n" +
+                        "            margin: auto;\n" +
+                        "            position: absolute;\n" +
+                        "            padding: 10px;\n" +
+                        "            left: 210px;\n" +
+                        "            right: 10px;\n" +
+                        "            top: 10px;\n" +
+                        "            bottom: 10px;\n" +
+                        "            border: 3px solid #009900;\n" +
+                        "        }\n" +
                         "    </style>\n" +
                         "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
                         "    <meta charset=\"UTF-8\">\n" +
                         "    <title>Categories</title>\n" +
                         "</head>\n" +
                         "<body>\n" +
-                        "<div class=\"center\">\n" +
-                        "   <h1>Categories<h1>\n" +
+                        "<div class=\"frame\">\n");
+                if (request.getSession().getAttribute("Role").equals("Owner")) {
+                    out.println("<h1>Categories</h1>");
+                } else {
+                    out.println("this page is available to owners only");
+                }
+                 out.println(       "</div>\n" +
+                        "<div class=\"left\">\n" +
+                        "<form action=\"/DB\" method=\"post\">\n");
+                if (request.getSession().getAttribute("Role").equals("Owner")) {
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
+                }
+                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
+                        "</form>\n" +
                         "</div>\n" +
                         "\n" +
                         "</body>\n" +
                         "</html>");
                 break;
-            case "products":
+            case "Products":
                 out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
                         "<head>\n" +
                         "    <style>\n" +
@@ -303,20 +352,52 @@ public class DB extends HttpServlet {
                         "            margin: auto;\n" +
                         "            padding: 10px;\n" +
                         "        }\n" +
+                        "        .left {\n" +
+                        "            text-align: left;\n" +
+                        "            width: 200px;\n" +
+                        "            padding: 0px;\n" +
+                        "            top: 10px;\n" +
+                        "            border: 3px solid #660000;\n" +
+                        "        }\n" +
+                        "        .frame {\n" +
+                        "            text-align: center;\n" +
+                        "            margin: auto;\n" +
+                        "            position: absolute;\n" +
+                        "            padding: 10px;\n" +
+                        "            left: 210px;\n" +
+                        "            right: 10px;\n" +
+                        "            top: 10px;\n" +
+                        "            bottom: 10px;\n" +
+                        "            border: 3px solid #009900;\n" +
+                        "        }\n" +
                         "    </style>\n" +
                         "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
                         "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Categories</title>\n" +
+                        "    <title>Products</title>\n" +
                         "</head>\n" +
                         "<body>\n" +
-                        "<div class=\"center\">\n" +
-                        "   <h1>Categories<h1>\n" +
+                        "<div class=\"frame\">\n");
+                if (request.getSession().getAttribute("Role").equals("Owner")) {
+                    out.println("<h1>Products</h1>");
+                } else {
+                    out.println("this page is available to owners only");
+                }
+                out.println(       "</div>\n" +
+                        "<div class=\"left\">\n" +
+                        "<form action=\"/DB\" method=\"post\">\n");
+                if (request.getSession().getAttribute("Role").equals("Owner")) {
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n");
+                }
+                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
+                        "</form>\n" +
                         "</div>\n" +
                         "\n" +
                         "</body>\n" +
                         "</html>");
                 break;
-            case "order_history":
+            case "Products Browsing":
                 out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
                         "<head>\n" +
                         "    <style>\n" +
@@ -325,20 +406,49 @@ public class DB extends HttpServlet {
                         "            margin: auto;\n" +
                         "            padding: 10px;\n" +
                         "        }\n" +
+                        "        .left {\n" +
+                        "            text-align: left;\n" +
+                        "            width: 200px;\n" +
+                        "            padding: 0px;\n" +
+                        "            top: 10px;\n" +
+                        "            border: 3px solid #660000;\n" +
+                        "        }\n" +
+                        "        .frame {\n" +
+                        "            text-align: center;\n" +
+                        "            margin: auto;\n" +
+                        "            position: absolute;\n" +
+                        "            padding: 10px;\n" +
+                        "            left: 210px;\n" +
+                        "            right: 10px;\n" +
+                        "            top: 10px;\n" +
+                        "            bottom: 10px;\n" +
+                        "            border: 3px solid #009900;\n" +
+                        "        }\n" +
                         "    </style>\n" +
                         "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
                         "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Categories</title>\n" +
+                        "    <title>Browsing</title>\n" +
                         "</head>\n" +
                         "<body>\n" +
-                        "<div class=\"center\">\n" +
-                        "   <h1>Categories<h1>\n" +
+                        "<div class=\"frame\">\n");
+                out.println("<h1>Browsing</h1>");
+                out.println(       "</div>\n" +
+                        "<div class=\"left\">\n" +
+                        "<form action=\"/DB\" method=\"post\">\n");
+                if (request.getSession().getAttribute("Role").equals("Owner")) {
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
+                            "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
+                }
+                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
+                        "</form>\n" +
                         "</div>\n" +
                         "\n" +
                         "</body>\n" +
                         "</html>");
                 break;
-            case "cart":
+            case "Product Order":
                 out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
                         "<head>\n" +
                         "    <style>\n" +
@@ -347,14 +457,94 @@ public class DB extends HttpServlet {
                         "            margin: auto;\n" +
                         "            padding: 10px;\n" +
                         "        }\n" +
+                        "        .left {\n" +
+                        "            text-align: left;\n" +
+                        "            width: 200px;\n" +
+                        "            padding: 0px;\n" +
+                        "            top: 10px;\n" +
+                        "            border: 3px solid #660000;\n" +
+                        "        }\n" +
+                        "        .frame {\n" +
+                        "            text-align: center;\n" +
+                        "            margin: auto;\n" +
+                        "            position: absolute;\n" +
+                        "            padding: 10px;\n" +
+                        "            left: 210px;\n" +
+                        "            right: 10px;\n" +
+                        "            top: 10px;\n" +
+                        "            bottom: 10px;\n" +
+                        "            border: 3px solid #009900;\n" +
+                        "        }\n" +
                         "    </style>\n" +
                         "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
                         "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Categories</title>\n" +
+                        "    <title>Order</title>\n" +
                         "</head>\n" +
                         "<body>\n" +
-                        "<div class=\"center\">\n" +
-                        "   <h1>Categories<h1>\n" +
+                        "<div class=\"frame\">\n");
+                out.println("<h1>Order</h1>");
+                out.println(       "</div>\n" +
+                        "<div class=\"left\">\n" +
+                        "<form action=\"/DB\" method=\"post\">\n");
+                if (request.getSession().getAttribute("Role").equals("Owner")) {
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
+                            "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
+                }
+                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
+                        "</form>\n" +
+                        "</div>\n" +
+                        "\n" +
+                        "</body>\n" +
+                        "</html>");
+                break;
+            case "Shopping Cart":
+                out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
+                        "<head>\n" +
+                        "    <style>\n" +
+                        "        .center {\n" +
+                        "            text-align: center;\n" +
+                        "            margin: auto;\n" +
+                        "            padding: 10px;\n" +
+                        "        }\n" +
+                        "        .left {\n" +
+                        "            text-align: left;\n" +
+                        "            width: 200px;\n" +
+                        "            padding: 0px;\n" +
+                        "            top: 10px;\n" +
+                        "            border: 3px solid #660000;\n" +
+                        "        }\n" +
+                        "        .frame {\n" +
+                        "            text-align: center;\n" +
+                        "            margin: auto;\n" +
+                        "            position: absolute;\n" +
+                        "            padding: 10px;\n" +
+                        "            left: 210px;\n" +
+                        "            right: 10px;\n" +
+                        "            top: 10px;\n" +
+                        "            bottom: 10px;\n" +
+                        "            border: 3px solid #009900;\n" +
+                        "        }\n" +
+                        "    </style>\n" +
+                        "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
+                        "    <meta charset=\"UTF-8\">\n" +
+                        "    <title>Shopping Cart</title>\n" +
+                        "</head>\n" +
+                        "<body>\n" +
+                        "<div class=\"frame\">\n");
+                out.println("<h1>Shopping Cart</h1>");
+                out.println(       "</div>\n" +
+                        "<div class=\"left\">\n" +
+                        "<form action=\"/DB\" method=\"post\">\n");
+                if (request.getSession().getAttribute("Role").equals("Owner")) {
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
+                            "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
+                }
+                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
+                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
+                        "</form>\n" +
                         "</div>\n" +
                         "\n" +
                         "</body>\n" +
@@ -423,6 +613,7 @@ public class DB extends HttpServlet {
             requestQuery.setString(1, user);
             rset = requestQuery.executeQuery();
             if (rset != null && rset.next()) {
+                request.getSession().setAttribute("Role", rset.getString("Role"));
                 request.getRequestDispatcher("/DB?func=home").forward(request, response);
                 out.print("<h1>Success! Found User: " + rset.getString("Username") + "</h1>");
             }
