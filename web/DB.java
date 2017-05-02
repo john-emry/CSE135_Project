@@ -48,13 +48,31 @@ public class DB extends HttpServlet {
     }
 
     private String selectCategoryButtons(String notChoose) {
-        String query = "Select * from Categories";
         PreparedStatement requestQuery;
         StringBuilder sb = new StringBuilder();
+        if (notChoose.equals("")) {
+            String query = "Select * from Categories";
+            try {
+                requestQuery = conn.prepareStatement(query);
+                rset = requestQuery.executeQuery();
+            } catch (Exception e) {
+
+            }
+        } else {
+            String query = "Select * from Categories where not \"CategoryID\"=?";
+            try {
+                requestQuery = conn.prepareStatement(query);
+                requestQuery.setInt(1, Integer.valueOf(notChoose));
+                rset = requestQuery.executeQuery();
+            } catch (Exception e) {
+
+            }
+        }
+
 
         try {
-            requestQuery = conn.prepareStatement(query);
-            rset = requestQuery.executeQuery();
+
+
             while (rset.next()) {
                 sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
                 sb.append("<input type=\"text\" name=\"productCatID\" value=\"" + rset.getInt("CategoryID") + "\" style=\"display: none\"/>");
@@ -62,11 +80,13 @@ public class DB extends HttpServlet {
                 sb.append("<input type=\"submit\" name=\"Name\" value=\"" + String.valueOf(rset.getString("Name")) + "\"/>");
                 sb.append("</form>");
             }
-            sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
-            sb.append("<input type=\"text\" name=\"productCatID\" value=\"-1\" style=\"display: none\"/>");
-            sb.append("<input type=\"text\" name=\"productFunc\" value=\"Category\" style=\"display: none\"/>");
-            sb.append("<input type=\"submit\" name=\"Name\" value=\"All Products\"/>");
-            sb.append("</form>");
+            if (!notChoose.equals("-1")) {
+                sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
+                sb.append("<input type=\"text\" name=\"productCatID\" value=\"-1\" style=\"display: none\"/>");
+                sb.append("<input type=\"text\" name=\"productFunc\" value=\"Category\" style=\"display: none\"/>");
+                sb.append("<input type=\"submit\" name=\"Name\" value=\"All Products\"/>");
+                sb.append("</form>");
+            }
             return sb.toString();
         } catch (Exception e) {
             return sb.toString();
@@ -75,7 +95,6 @@ public class DB extends HttpServlet {
 
     private String productSelect(int catID, int accountID, PrintWriter out) {
         StringBuilder sb = new StringBuilder();
-        out.println(catID + ", " + accountID);
         try {
             String query = "";
             PreparedStatement requestQuery;
@@ -103,8 +122,53 @@ public class DB extends HttpServlet {
             }
             return sb.toString();
         } catch (Exception e) {
-            //printStackTrace(e, out);
+            //////PrintStackTrace(e, out);
             return sb.toString();
+        }
+    }
+
+    private Boolean productDelete(int prodID, PrintWriter out) {
+        try {
+            String query = "Delete from public.Products where \"ProductID\" = ?\n";
+            PreparedStatement requestQuery;
+            try {
+                requestQuery = conn.prepareStatement(query);
+                requestQuery.setInt(1, prodID);
+                requestQuery.executeUpdate();
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+
+        } catch (Exception e) {
+            //PrintStackTrace(e, out);
+            return false;
+        }
+    }
+
+    private Boolean productUpdate(int prodID, String name, String SKU, String price) {
+        try {
+            if (name.equals("") || SKU.equals("") || price.equals("") || Integer.valueOf(price) < 0)  {
+                return false;
+            }
+        } catch (Exception e) {
+            ////PrintStackTrace(e, out);
+            return false;
+        }
+        String query = "UPDATE public.Products\n" +
+                "SET \"Name\"= ?, \"SKU\"=?, \"Price\"=?\n" +
+                "WHERE \"ProductID\"=?;";
+        PreparedStatement requestQuery;
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setString(1, name);
+            requestQuery.setString(2, SKU);
+            requestQuery.setString(3, price);
+            requestQuery.setInt(4, prodID);
+            requestQuery.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -183,7 +247,7 @@ public class DB extends HttpServlet {
                 return false;
             }
         } catch (Exception e) {
-            printStackTrace(e, out);
+            ////PrintStackTrace(e, out);
             return false;
         }
         String query = "Select * from public.products where \"SKU\" = ?;";
@@ -214,7 +278,7 @@ public class DB extends HttpServlet {
             requestQuery.executeUpdate();
             return true;
         } catch (Exception e) {
-            printStackTrace(e, out);
+            ////PrintStackTrace(e, out);
             return false;
         }
 
@@ -240,12 +304,12 @@ public class DB extends HttpServlet {
                 requestQuery.executeUpdate();
                 return true;
             } catch (Exception e) {
-                printStackTrace(e, out);
+                ////PrintStackTrace(e, out);
                 return false;
             }
 
         } catch (Exception e) {
-            printStackTrace(e, out);
+            ////PrintStackTrace(e, out);
             return false;
         }
 
@@ -279,7 +343,7 @@ public class DB extends HttpServlet {
             requestQuery.executeUpdate();
             return true;
         } catch (Exception e) {
-            printStackTrace(e, out);
+            ////PrintStackTrace(e, out);
             return false;
         }
     }
@@ -341,10 +405,10 @@ public class DB extends HttpServlet {
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
                             "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
+                } else {
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n");
                 }
                 out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
                         "</form>\n" +
                         "</div>\n" +
                         "\n" +
@@ -420,10 +484,10 @@ public class DB extends HttpServlet {
                         "<form action=\"/DB\" method=\"post\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
+                } else {
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n");
                 }
                 out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
                         "</form>\n" +
                         "</div>\n" +
                         "\n" +
@@ -473,19 +537,27 @@ public class DB extends HttpServlet {
                         "<body>\n" +
                         "<div class=\"frame\">\n" +
                         "<div class=\"frameleft\">\n");
-                out.println(selectCategoryButtons(""));
+                try {
+                    out.println(selectCategoryButtons(request.getParameter("productCatID")));
+                } catch (Exception e) {
+                    try {
+                        out.println(selectCategoryButtons(request.getSession().getAttribute("productCatID").toString()));
+                    } catch (Exception err) {
+                        out.println(selectCategoryButtons(""));
+                    }
+                }
                 out.println("</div>");
                 out.println("<div class=\"framecenter\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("<h1>Welcome " + request.getSession().getAttribute("Username") + "</h1>\n");
                     out.println("<h1>Products</h1>");
+                    out.println("<form action=\"/DB?func=Products\" method=\"post\">\n");
+                    out.println("Name: <input type=\"text\" name=\"Search\" value=\"\" style=\"text-align: center\"/>");
+                    out.println("<input type=\"submit\" name=\"productFunc\" value=\"Search\"/><br/>");
                     try {
                         switch (request.getParameter("productFunc")) {
-                            case "Category":
-                                out.println(productSelect(Integer.valueOf(request.getParameter("productCatID")), (int) request.getSession().getAttribute("AccountID"), out));
-                                break;
                             case "Delete":
-                                if (!deleteCategory(Integer.valueOf(request.getParameter("catID")), (int) request.getSession().getAttribute("AccountID"), out)) {
+                                if (!productDelete(Integer.valueOf(request.getParameter("prodID")), out)) {
                                     out.println("<p style=\"color:red;text-align:center\">data modification failure</p>");
                                 }
                                 break;
@@ -496,18 +568,29 @@ public class DB extends HttpServlet {
                                 }
                                 break;
                             case "Update":
-                                if (!updateCategory(Integer.valueOf(request.getParameter("catID")), request.getParameter("Name"), request.getParameter("Description"), (int) request.getSession().getAttribute("AccountID"), out)) {
+                                if (!productUpdate(Integer.valueOf(request.getParameter("prodID")), request.getParameter("Name"), request.getParameter("SKU"), request.getParameter("Price"))) {
                                     out.println("<p style=\"color:red;text-align:center\">data modification failure</p>");
                                 }
                                 break;
                             default:
-                                out.println("IT DIDN'T HIT ANYTHING");
                                 break;
 
                         }
                     } catch (Exception e) {
-                        printStackTrace(e, out);
+                        //PrintStackTrace(e, out);
                     }
+                    try {
+                        out.println(productSelect(Integer.valueOf(request.getParameter("productCatID")), (int) request.getSession().getAttribute("AccountID"), out));
+                        request.getSession().setAttribute("productCatID", request.getParameter("productCatID"));
+                    } catch (Exception e) {
+                        try {
+                            out.println(productSelect(Integer.valueOf(request.getSession().getAttribute("productCatID").toString()), (int) request.getSession().getAttribute("AccountID"), out));
+                            request.getSession().setAttribute("productCatID", request.getParameter("productCatID"));
+                        } catch (Exception err) {
+                            //PrintStackTrace(err, out);
+                        }
+                    }
+
                     StringBuilder sb = new StringBuilder();
                     sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
                     sb.append("Name: <input type=\"text\" name=\"Name\" value=\"\" style=\"text-align: center\"/>");
@@ -529,10 +612,11 @@ public class DB extends HttpServlet {
                         "<form action=\"/DB\" method=\"post\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n");
+                } else {
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n");
                 }
                 out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
                         "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
                         "</form>\n" +
                         "</div>\n" +
                         "\n" +
@@ -580,10 +664,10 @@ public class DB extends HttpServlet {
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
                             "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
+                } else {
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n");
                 }
-                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
+                        out.println("    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
                         "</form>\n" +
                         "</div>\n" +
                         "\n" +
@@ -631,17 +715,17 @@ public class DB extends HttpServlet {
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
                             "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
+                } else {
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n");
                 }
                 out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
                         "</form>\n" +
                         "</div>\n" +
                         "\n" +
                         "</body>\n" +
                         "</html>");
                 break;
-            case "Shopping Cart":
+            case "Checkout":
                 out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
                         "<head>\n" +
                         "    <style>\n" +
@@ -671,11 +755,11 @@ public class DB extends HttpServlet {
                         "    </style>\n" +
                         "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
                         "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Shopping Cart</title>\n" +
+                        "    <title>Browsing</title>\n" +
                         "</head>\n" +
                         "<body>\n" +
                         "<div class=\"frame\">\n");
-                out.println("<h1>Shopping Cart</h1>");
+                out.println("<h1>Browsing</h1>");
                 out.println(       "</div>\n" +
                         "<div class=\"left\">\n" +
                         "<form action=\"/DB\" method=\"post\">\n");
@@ -683,9 +767,8 @@ public class DB extends HttpServlet {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
                             "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
                 }
-                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Shopping Cart\"/><br/>\n" +
+                out.println("    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
+                        "<input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n" +
                         "</form>\n" +
                         "</div>\n" +
                         "\n" +
@@ -698,16 +781,6 @@ public class DB extends HttpServlet {
     }
 
     private void signup(String user, String role, String age, String state, PrintWriter out) {
-        try {
-            Class.forName("org.postgresql.Driver");
-            DriverManager.registerDriver(new org.postgresql.Driver());
-            String dbURL = "jdbc:postgresql:CSE135?user=snapp&password=saving?bay";
-            conn = DriverManager.getConnection(dbURL);
-            System.out.println("Connected to CSE135");
-        } catch (Exception e) {
-            error = e.toString();
-            printStackTrace(e, out);
-        }
         String query = "SELECT * FROM Accounts WHERE \"Username\" = ?";
         PreparedStatement requestQuery;
         try {
@@ -734,11 +807,11 @@ public class DB extends HttpServlet {
             out.print("<h1>Sign Up Successful!</h1>");
         } catch (Exception e) {
             out.print("<h1>Sign Up Failure!</h1>");
-            printStackTrace(e, out);
+            ////PrintStackTrace(e, out);
         }
     }
 
-    private void printStackTrace(Exception e, PrintWriter out) {
+    private void PrintStackTrace(Exception e, PrintWriter out) {
         out.println(e.toString());
         StackTraceElement[] st = e.getStackTrace();
         for (StackTraceElement s : st) {
@@ -763,10 +836,7 @@ public class DB extends HttpServlet {
             }
             out.print("<h1>Failure, no user found with that name!</h1>");
         } catch (Exception e) {
-            StackTraceElement[] st = e.getStackTrace();
-            for (StackTraceElement s : st) {
-                out.println(s.toString());
-            }
+            //printStackTrace(e, out);
             out.print("<h1>Failure, no user found with that name!</h1>");
         }
     }
