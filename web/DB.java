@@ -30,201 +30,163 @@ public class DB extends HttpServlet {
         }
     }
 
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        response.setContentType("text/html");
-        PrintWriter out = response.getWriter();
-        switch(request.getParameter("func")) {
-            case "login":
-                login(request.getParameter("username"), out, response, request);
-                break;
-            case "signup":
-                signup(request.getParameter("name"),
-                        request.getParameter("role"),
-                        request.getParameter("age"),
-                        request.getParameter("state"),
-                        out);
-                break;
-            case "home":
-                out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
-                        "<head>\n" +
-                        "    <style>\n" +
-                        "        .center {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "        .left {\n" +
-                        "            text-align: left;\n" +
-                        "            width: 200px;\n" +
-                        "            padding: 0px;\n" +
-                        "            top: 10px;\n" +
-                        "            border: 3px solid #660000;\n" +
-                        "        }\n" +
-                        "        .frame {\n" +
-                        "            position: absolute;\n" +
-                        "            padding: 10px;\n" +
-                        "            left: 210px;\n" +
-                        "            right: 10px;\n" +
-                        "            top: 10px;\n" +
-                        "            bottom: 10px;\n" +
-                        "            border: 3px solid #009900;\n" +
-                        "        }\n" +
-                        "    </style>\n" +
-                        "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Home</title>\n" +
-                        "</head>\n" +
-                        "<body>\n" +
-                        "<div class=\"frame\">\n" +
-                        "    <iframe id=\"iframe\" src=\"/DB?func=categories\" style=\"width:100%; height: 100%\"></iframe>\n" +
-                        "</div>\n" +
-                        "<div class=\"left\">\n" +
-                        "    <script>\n" +
-                        "        function setURL(url) {\n" +
-                        "            document.getElementById('iframe').src = url;\n" +
-                        "        }\n" +
-                        "    </script>\n");
-                if (request.getSession().getAttribute("Role").equals("Owner")) {
-                out.println("    <input type=\"button\" onclick=\"setURL('/DB?func=categories')\" value=\"Categories\"/><br/>\n" +
-                        "    <input type=\"button\" onclick=\"setURL('/DB?func=products')\" value=\"Products\"/><br/>\n");
-                }
-                 out.println(       "    <input type=\"button\" onclick=\"setURL('/DB?func=browse')\" value=\"Products Browsing\"/><br/>\n" +
-                        "    <input type=\"button\" onclick=\"setURL('/DB?func=order_history')\" value=\"Product Order\"/><br/>\n" +
-                        "    <input type=\"button\" onclick=\"setURL('/DB?func=cart')\" value=\"Buy Shopping Cart\"/><br/>\n" +
-                        "</div>\n" +
-                        "\n" +
-                        "</body>\n" +
-                        "</html>");
-                break;
-            case "categories":
-                out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
-                        "<head>\n" +
-                        "    <style>\n" +
-                        "        .center {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "    </style>\n" +
-                        "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Categories</title>\n" +
-                        "</head>\n" +
-                        "<body>\n" +
-                        "<div class=\"center\">\n");
-                try {
-                    if (request.getSession().getAttribute("Role").equals("Owner")) {
-                        out.println("this page is available to owners only");
-                    } else {
-                        out.println("<h1>Categories  <h1>\n");
-                    }
-                } catch (Exception e) {
-                    out.println("this page is available to owners only");
-                }
-                out.println("</div>\n" +
-                        "\n" +
-                        "</body>\n" +
-                        "</html>");
-                break;
-            case "browse":
-                out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
-                        "<head>\n" +
-                        "    <style>\n" +
-                        "        .center {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "    </style>\n" +
-                        "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Browse</title>\n" +
-                        "</head>\n" +
-                        "<body>\n" +
-                        "<div class=\"center\">\n" +
-                        "   <h1>Browse<h1>\n" +
-                        "</div>\n" +
-                        "\n" +
-                        "</body>\n" +
-                        "</html>");
-                break;
-            case "products":
-                out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
-                        "<head>\n" +
-                        "    <style>\n" +
-                        "        .center {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "    </style>\n" +
-                        "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Products</title>\n" +
-                        "</head>\n" +
-                        "<body>\n" +
-                        "<div class=\"center\">\n");
-                try {
-                    if (request.getSession().getAttribute("Role").equals("Owner")) {
-                        out.println("this page is available to owners only");
-                    } else {
-                        out.println("<h1>Products<h1>\n");
-                    }
-                } catch (Exception e) {
-                    out.println("this page is available to owners only");
-                }
-                out.println("</div>\n" +
-                        "\n" +
-                        "</body>\n" +
-                        "</html>");
-                break;
-            case "order_history":
-                out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
-                        "<head>\n" +
-                        "    <style>\n" +
-                        "        .center {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "    </style>\n" +
-                        "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Order History</title>\n" +
-                        "</head>\n" +
-                        "<body>\n" +
-                        "<div class=\"center\">\n" +
-                        "   <h1>Order History<h1>\n" +
-                        "</div>\n" +
-                        "\n" +
-                        "</body>\n" +
-                        "</html>");
-                break;
-            case "cart":
-                out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
-                        "<head>\n" +
-                        "    <style>\n" +
-                        "        .center {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "    </style>\n" +
-                        "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Shopping Cart</title>\n" +
-                        "</head>\n" +
-                        "<body>\n" +
-                        "<div class=\"center\">\n" +
-                        "   <h1>Shopping Cart<h1>\n" +
-                        "</div>\n" +
-                        "\n" +
-                        "</body>\n" +
-                        "</html>");
-                break;
-            default:
-                break;
+    private String selectCategoryButtons(String ID) {
+        String query = "Select * from Categories where \"AccountID\" = ?";
+        PreparedStatement requestQuery;
+        StringBuilder sb = new StringBuilder();
+
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setInt(1, Integer.valueOf(ID));
+            rset = requestQuery.executeQuery();
+            while (rset.next()) {
+                sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
+                sb.append("<input type=\"text\" name=\"catID\" value=\"" + String.valueOf(rset.getInt("CategoryID")) + "\" style=\"display: none\"/>");
+                sb.append("<input type=\"text\" name=\"productsFunc\" value=\"category\" style=\"display: none\"/>");
+                sb.append("<input type=\"submit\" name=\"Name\" value=\"" + String.valueOf(rset.getString("Name")) + "\"/>");
+                sb.append("</form>");
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return sb.toString();
         }
+    }
+
+    private String categorySelect(String ID) {
+        String query = "Select * from Categories where \"AccountID\" = ?";
+        PreparedStatement requestQuery;
+        StringBuilder sb = new StringBuilder();
+
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setInt(1, Integer.valueOf(ID));
+            rset = requestQuery.executeQuery();
+            while (rset.next()) {
+                sb.append("<form action=\"/DB?func=Categories\" method=\"post\">\n");
+                sb.append("<input type=\"text\" name=\"catID\" value=\"" + String.valueOf(rset.getInt("CategoryID")) + "\" style=\"display: none\"/>");
+                sb.append("<input type=\"text\" name=\"Name\" value=\"" + rset.getString("Name") + "\" style=\"text-align: center\"/>");
+                sb.append("<textarea name=\"Description\" rows=\"4\" columns=\"50\">");
+                sb.append(rset.getString("Description"));
+                sb.append("</textarea>");
+                sb.append("<input type=\"submit\" name=\"categoryFunc\" value=\"Delete\"/>");
+                sb.append("<input type=\"submit\" name=\"categoryFunc\" value=\"Update\"/><br/>");
+                sb.append("</form>");
+            }
+            sb.append("<form action=\"/DB?func=Categories\" method=\"post\">\n");
+            sb.append("<input type=\"text\" name=\"Name\" style=\"text-align: center\"/>");
+            sb.append("<textarea name=\"Description\" rows=\"4\" columns=\"50\">");
+            sb.append("</textarea>");
+            sb.append("<input type=\"submit\" name=\"categoryFunc\" value=\"Insert\"/>");
+            sb.append("</form>");
+            return sb.toString();
+        } catch (Exception e) {
+            sb.append("<form action=\"/DB?func=Categories\" method=\"post\">\n");
+            sb.append("<input type=\"text\" name=\"Name\" style=\"text-align: center\"/>");
+            sb.append("<textarea name=\"Description\" rows=\"4\" columns=\"50\">");
+            sb.append("</textarea>");
+            sb.append("<input type=\"submit\" name=\"categoryFunc\" value=\"Insert\"/>");
+            sb.append("</form>");
+            return sb.toString();
+        }
+    }
+
+    private Boolean insertCategory(String name, String description, int AccountID, PrintWriter out) {
+        if (name.equals("")) {
+            return false;
+        }
+        String query = "SELECT * FROM public.Categories WHERE \"Name\" = ?";
+        PreparedStatement requestQuery;
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setString(1, name);
+            rset = requestQuery.executeQuery();
+            if (rset != null && rset.next()) {
+                return false;
+            }
+        } catch (Exception e) {
+        }
+        query = "INSERT INTO public.Categories(\"Name\", \"Description\", \"AccountID\")\n" +
+                "SELECT ?, ?, ?\n" +
+                "WHERE NOT EXISTS (SELECT * from public.Categories where \"Name\" = ?);";
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setString(1, name);
+            requestQuery.setString(2, description);
+            requestQuery.setInt(3, AccountID);
+            requestQuery.setString(4, name);
+            requestQuery.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private Boolean deleteCategory(int catID, int AccountID, PrintWriter out) {
+        try {
+            String query = "SELECT * FROM public.Products WHERE \"CategoryID\" = ?";
+            PreparedStatement requestQuery;
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setInt(1, catID);
+            rset = requestQuery.executeQuery();
+            if (rset != null && rset.next()) {
+                return false;
+            }
+            query = "Delete from public.Categories where \"CategoryID\" = ?\n" +
+                    "AND\n" +
+                    "NOT EXISTS (Select * from public.Products where \"CategoryID\" = ?)";
+            try {
+                requestQuery = conn.prepareStatement(query);
+                requestQuery.setInt(1, catID);
+                requestQuery.setInt(2, catID);
+                requestQuery.executeUpdate();
+                return true;
+            } catch (Exception e) {
+                printStackTrace(e, out);
+                return false;
+            }
+
+        } catch (Exception e) {
+            printStackTrace(e, out);
+            return false;
+        }
+
+    }
+
+    private Boolean updateCategory(int catID, String name, String description, int AccountID, PrintWriter out) {
+        if (name.equals("")) {
+            return false;
+        }
+        String query = "SELECT * FROM public.Categories WHERE \"Name\" = ?";
+        PreparedStatement requestQuery;
+        try {
+
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setString(1, name);
+            rset = requestQuery.executeQuery();
+            if (rset != null && rset.next()) {
+                return false;
+            }
+        } catch (Exception e) {
+
+        }
+        query = "UPDATE public.categories\n" +
+                "SET \"Name\"= ?, \"Description\"= ?\n" +
+                "WHERE \"CategoryID\" = ?;";
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setString(1, name);
+            requestQuery.setString(2, description);
+            requestQuery.setInt(3, catID);
+            requestQuery.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            printStackTrace(e, out);
+            return false;
+        }
+    }
+
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
     }
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -255,7 +217,6 @@ public class DB extends HttpServlet {
                         "            width: 200px;\n" +
                         "            padding: 0px;\n" +
                         "            top: 10px;\n" +
-                        "            border: 3px solid #660000;\n" +
                         "        }\n" +
                         "        .frame {\n" +
                         "            position: absolute;\n" +
@@ -264,7 +225,6 @@ public class DB extends HttpServlet {
                         "            right: 10px;\n" +
                         "            top: 10px;\n" +
                         "            bottom: 10px;\n" +
-                        "            border: 3px solid #009900;\n" +
                         "        }\n" +
                         "    </style>\n" +
                         "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
@@ -273,6 +233,7 @@ public class DB extends HttpServlet {
                         "</head>\n" +
                         "<body>\n" +
                         "<div class=\"frame\">\n" +
+                        "<h1>Welcome " + request.getSession().getAttribute("Username") + "</h1>\n" +
                         "</div>\n" +
                         "<div class=\"left\">\n" +
                         "<form action=\"/DB\" method=\"post\">\n");
@@ -290,6 +251,7 @@ public class DB extends HttpServlet {
                         "</html>");
                 break;
             case "Categories":
+
                 out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
                         "<head>\n" +
                         "    <style>\n" +
@@ -323,8 +285,32 @@ public class DB extends HttpServlet {
                         "</head>\n" +
                         "<body>\n" +
                         "<div class=\"frame\">\n");
+                try {
+                    switch (request.getParameter("categoryFunc")) {
+                        case "Delete":
+                            if (!deleteCategory(Integer.valueOf(request.getParameter("catID")), (int) request.getSession().getAttribute("AccountID"), out)) {
+                                out.println("<p style=\"color:red;text-align:center\">data modification failure</p>");
+                            }
+                            break;
+                        case "Insert":
+                            if(!insertCategory(request.getParameter("Name"), request.getParameter("Description"), (int) request.getSession().getAttribute("AccountID"), out)) {
+                                out.println("<p style=\"color:red;text-align:center\">data modification failure</p>");
+                            }
+                            break;
+                        case "Update":
+                            if (!updateCategory(Integer.valueOf(request.getParameter("catID")), request.getParameter("Name"), request.getParameter("Description"), (int) request.getSession().getAttribute("AccountID"), out)) {
+                                out.println("<p style=\"color:red;text-align:center\">data modification failure</p>");
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                } catch (Exception e) {
+                }
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
-                    out.println("<h1>Categories</h1>");
+                    out.println("<h1>Welcome " + request.getSession().getAttribute("Username") + "</h1>\n" +
+                        "<h1>Categories</h1>");
+                    out.println(categorySelect(request.getSession().getAttribute("AccountID").toString()));
                 } else {
                     out.println("this page is available to owners only");
                 }
@@ -360,8 +346,6 @@ public class DB extends HttpServlet {
                         "            border: 3px solid #660000;\n" +
                         "        }\n" +
                         "        .frame {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
                         "            position: absolute;\n" +
                         "            padding: 10px;\n" +
                         "            left: 210px;\n" +
@@ -370,19 +354,34 @@ public class DB extends HttpServlet {
                         "            bottom: 10px;\n" +
                         "            border: 3px solid #009900;\n" +
                         "        }\n" +
+                        "       .frameleft {\n" +
+                        "            text-align: left;\n" +
+                        "            width: 200px;\n" +
+                        "            padding: 10px;\n" +
+                        "        }\n" +
+                        "        .framecenter {\n" +
+                        "            text-align: center;\n" +
+                        "            margin: auto;\n" +
+                        "            padding: 10px;\n" +
+                        "        }\n" +
                         "    </style>\n" +
                         "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
                         "    <meta charset=\"UTF-8\">\n" +
                         "    <title>Products</title>\n" +
                         "</head>\n" +
                         "<body>\n" +
-                        "<div class=\"frame\">\n");
+                        "<div class=\"frame\">\n" +
+                        "<div class=\"frameleft\">\n");
+                out.println(selectCategoryButtons(request.getSession().getAttribute("AccountID").toString()));
+                out.println("</div>");
+                out.println("<div class=\"framecenter\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("<h1>Products</h1>");
                 } else {
                     out.println("this page is available to owners only");
                 }
                 out.println(       "</div>\n" +
+                        "</div>\n" +
                         "<div class=\"left\">\n" +
                         "<form action=\"/DB\" method=\"post\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
@@ -614,6 +613,8 @@ public class DB extends HttpServlet {
             rset = requestQuery.executeQuery();
             if (rset != null && rset.next()) {
                 request.getSession().setAttribute("Role", rset.getString("Role"));
+                request.getSession().setAttribute("Username", rset.getString("Username"));
+                request.getSession().setAttribute("AccountID", rset.getInt("AccountID"));
                 request.getRequestDispatcher("/DB?func=home").forward(request, response);
                 out.print("<h1>Success! Found User: " + rset.getString("Username") + "</h1>");
             }
