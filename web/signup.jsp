@@ -15,7 +15,7 @@
 <body>
     <div class="center">
         <h2>Sign Up</h2>
-        <form action="/DB?func=signup" method="post">
+        <form action="/Servlet?func=signup" method="post">
             name: <input type="text" name="name" style="text-align: center"/><br/><br/>
             role: <select name="role">
                 <option value="Owner">Owner</option>

@@ -14,7 +14,7 @@
 <body>
 <div class="center">
     <h2>Login</h2>
-    <form action="/DB?func=login" method="post">
+    <form action="/Servlet?func=login" method="post">
         username: <input type="text" name="username" style="text-align: center"/></br/>
         <!--password: <input type="password" name="password" style="text-align: center"/><br/>-->
         <input type="submit" value="Login"/>

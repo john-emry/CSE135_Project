@@ -12,7 +12,7 @@ import javax.servlet.http.*;
 import oracle.jvm.hotspot.jfr.StackTrace;
 import org.postgresql.*;
 
-public class DB extends HttpServlet {
+public class Servlet extends HttpServlet {
     private static Connection conn = null;
     private static Statement stmt = null;
     private static ResultSet rset = null;
@@ -74,14 +74,14 @@ public class DB extends HttpServlet {
 
 
             while (rset.next()) {
-                sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
+                sb.append("<form action=\"/Servlet?func=Products\" method=\"post\">\n");
                 sb.append("<input type=\"text\" name=\"productCatID\" value=\"" + rset.getInt("CategoryID") + "\" style=\"display: none\"/>");
                 sb.append("<input type=\"text\" name=\"productFunc\" value=\"Category\" style=\"display: none\"/>");
                 sb.append("<input type=\"submit\" name=\"Name\" value=\"" + String.valueOf(rset.getString("Name")) + "\"/>");
                 sb.append("</form>");
             }
             if (!notChoose.equals("-1")) {
-                sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
+                sb.append("<form action=\"/Servlet?func=Products\" method=\"post\">\n");
                 sb.append("<input type=\"text\" name=\"productCatID\" value=\"-1\" style=\"display: none\"/>");
                 sb.append("<input type=\"text\" name=\"productFunc\" value=\"Category\" style=\"display: none\"/>");
                 sb.append("<input type=\"submit\" name=\"Name\" value=\"All Products\"/>");
@@ -111,7 +111,7 @@ public class DB extends HttpServlet {
 
             rset = requestQuery.executeQuery();
             while (rset.next()) {
-                sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
+                sb.append("<form action=\"/Servlet?func=Products\" method=\"post\">\n");
                 sb.append("<input type=\"text\" name=\"prodID\" value=\"" + String.valueOf(rset.getInt("ProductID")) + "\" style=\"display: none\"/>");
                 sb.append("Name: <input type=\"text\" name=\"Name\" value=\"" + rset.getString("Name") + "\" style=\"text-align: center\"/>");
                 sb.append("SKU: <input type=\"text\" name=\"SKU\" value=\"" + rset.getString("SKU") + "\" style=\"text-align: center\"/>");
@@ -182,7 +182,7 @@ public class DB extends HttpServlet {
             requestQuery.setInt(1, Integer.valueOf(ID));
             rset = requestQuery.executeQuery();
             while (rset.next()) {
-                sb.append("<form action=\"/DB?func=Categories\" method=\"post\">\n");
+                sb.append("<form action=\"/Servlet?func=Categories\" method=\"post\">\n");
                 sb.append("<input type=\"text\" name=\"catID\" value=\"" + String.valueOf(rset.getInt("CategoryID")) + "\" style=\"display: none\"/>");
                 sb.append("<input type=\"text\" name=\"Name\" value=\"" + rset.getString("Name") + "\" style=\"text-align: center\"/>");
                 sb.append("<textarea name=\"Description\" rows=\"4\" columns=\"50\">");
@@ -192,7 +192,7 @@ public class DB extends HttpServlet {
                 sb.append("<input type=\"submit\" name=\"categoryFunc\" value=\"Update\"/><br/>");
                 sb.append("</form>");
             }
-            sb.append("<form action=\"/DB?func=Categories\" method=\"post\">\n");
+            sb.append("<form action=\"/Servlet?func=Categories\" method=\"post\">\n");
             sb.append("<input type=\"text\" name=\"Name\" style=\"text-align: center\"/>");
             sb.append("<textarea name=\"Description\" rows=\"4\" columns=\"50\">");
             sb.append("</textarea>");
@@ -200,7 +200,7 @@ public class DB extends HttpServlet {
             sb.append("</form>");
             return sb.toString();
         } catch (Exception e) {
-            sb.append("<form action=\"/DB?func=Categories\" method=\"post\">\n");
+            sb.append("<form action=\"/Servlet?func=Categories\" method=\"post\">\n");
             sb.append("<input type=\"text\" name=\"Name\" style=\"text-align: center\"/>");
             sb.append("<textarea name=\"Description\" rows=\"4\" columns=\"50\">");
             sb.append("</textarea>");
@@ -401,7 +401,7 @@ public class DB extends HttpServlet {
                         "<h1>Welcome " + request.getSession().getAttribute("Username") + "</h1>\n" +
                         "</div>\n" +
                         "<div class=\"left\">\n" +
-                        "<form action=\"/DB\" method=\"post\">\n");
+                        "<form action=\"/Servlet\" method=\"post\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
                             "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
@@ -481,7 +481,7 @@ public class DB extends HttpServlet {
                 }
                  out.println(       "</div>\n" +
                         "<div class=\"left\">\n" +
-                        "<form action=\"/DB\" method=\"post\">\n");
+                        "<form action=\"/Servlet\" method=\"post\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
                 } else {
@@ -551,7 +551,7 @@ public class DB extends HttpServlet {
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("<h1>Welcome " + request.getSession().getAttribute("Username") + "</h1>\n");
                     out.println("<h1>Products</h1>");
-                    out.println("<form action=\"/DB?func=Products\" method=\"post\">\n");
+                    out.println("<form action=\"/Servlet?func=Products\" method=\"post\">\n");
                     out.println("Name: <input type=\"text\" name=\"Search\" value=\"\" style=\"text-align: center\"/>");
                     out.println("<input type=\"submit\" name=\"productFunc\" value=\"Search\"/><br/>");
                     try {
@@ -592,7 +592,7 @@ public class DB extends HttpServlet {
                     }
 
                     StringBuilder sb = new StringBuilder();
-                    sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
+                    sb.append("<form action=\"/Servlet?func=Products\" method=\"post\">\n");
                     sb.append("Name: <input type=\"text\" name=\"Name\" value=\"\" style=\"text-align: center\"/>");
                     sb.append("SKU: <input type=\"text\" name=\"SKU\" value=\"\" style=\"text-align: center\"/>");
                     sb.append("Price: <input type=\"text\" name=\"Price\" value=\"\" style=\"text-align: center\"/>");
@@ -609,7 +609,7 @@ public class DB extends HttpServlet {
                 out.println(       "</div>\n" +
                         "</div>\n" +
                         "<div class=\"left\">\n" +
-                        "<form action=\"/DB\" method=\"post\">\n");
+                        "<form action=\"/Servlet\" method=\"post\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n");
                 } else {
@@ -660,7 +660,7 @@ public class DB extends HttpServlet {
                 out.println("<h1>Browsing</h1>");
                 out.println(       "</div>\n" +
                         "<div class=\"left\">\n" +
-                        "<form action=\"/DB\" method=\"post\">\n");
+                        "<form action=\"/Servlet\" method=\"post\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
                             "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
@@ -711,7 +711,7 @@ public class DB extends HttpServlet {
                 out.println("<h1>Order</h1>");
                 out.println(       "</div>\n" +
                         "<div class=\"left\">\n" +
-                        "<form action=\"/DB\" method=\"post\">\n");
+                        "<form action=\"/Servlet\" method=\"post\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
                             "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
@@ -762,7 +762,7 @@ public class DB extends HttpServlet {
                 out.println("<h1>Browsing</h1>");
                 out.println(       "</div>\n" +
                         "<div class=\"left\">\n" +
-                        "<form action=\"/DB\" method=\"post\">\n");
+                        "<form action=\"/Servlet\" method=\"post\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
                             "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
@@ -831,7 +831,7 @@ public class DB extends HttpServlet {
                 request.getSession().setAttribute("Role", rset.getString("Role"));
                 request.getSession().setAttribute("Username", rset.getString("Username"));
                 request.getSession().setAttribute("AccountID", rset.getInt("AccountID"));
-                request.getRequestDispatcher("/DB?func=home").forward(request, response);
+                request.getRequestDispatcher("/Servlet?func=home").forward(request, response);
                 out.print("<h1>Success! Found User: " + rset.getString("Username") + "</h1>");
             }
             out.print("<h1>Failure, no user found with that name!</h1>");
