@@ -30,24 +30,80 @@ public class DB extends HttpServlet {
         }
     }
 
-    private String selectCategoryButtons(String ID) {
-        String query = "Select * from Categories where \"AccountID\" = ?";
+    private String categoryDropDown() {
+        String query = "Select * from Categories";
         PreparedStatement requestQuery;
         StringBuilder sb = new StringBuilder();
 
         try {
             requestQuery = conn.prepareStatement(query);
-            requestQuery.setInt(1, Integer.valueOf(ID));
+            rset = requestQuery.executeQuery();
+            while (rset.next()) {
+                sb.append("<option value=\"" + rset.getString("CategoryID") + "\">" + rset.getString("Name") + "</option>\n");
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return sb.toString();
+        }
+    }
+
+    private String selectCategoryButtons(String notChoose) {
+        String query = "Select * from Categories";
+        PreparedStatement requestQuery;
+        StringBuilder sb = new StringBuilder();
+
+        try {
+            requestQuery = conn.prepareStatement(query);
             rset = requestQuery.executeQuery();
             while (rset.next()) {
                 sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
-                sb.append("<input type=\"text\" name=\"catID\" value=\"" + String.valueOf(rset.getInt("CategoryID")) + "\" style=\"display: none\"/>");
-                sb.append("<input type=\"text\" name=\"productsFunc\" value=\"category\" style=\"display: none\"/>");
+                sb.append("<input type=\"text\" name=\"productCatID\" value=\"" + rset.getInt("CategoryID") + "\" style=\"display: none\"/>");
+                sb.append("<input type=\"text\" name=\"productFunc\" value=\"Category\" style=\"display: none\"/>");
                 sb.append("<input type=\"submit\" name=\"Name\" value=\"" + String.valueOf(rset.getString("Name")) + "\"/>");
+                sb.append("</form>");
+            }
+            sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
+            sb.append("<input type=\"text\" name=\"productCatID\" value=\"-1\" style=\"display: none\"/>");
+            sb.append("<input type=\"text\" name=\"productFunc\" value=\"Category\" style=\"display: none\"/>");
+            sb.append("<input type=\"submit\" name=\"Name\" value=\"All Products\"/>");
+            sb.append("</form>");
+            return sb.toString();
+        } catch (Exception e) {
+            return sb.toString();
+        }
+    }
+
+    private String productSelect(int catID, int accountID, PrintWriter out) {
+        StringBuilder sb = new StringBuilder();
+        out.println(catID + ", " + accountID);
+        try {
+            String query = "";
+            PreparedStatement requestQuery;
+            if (catID != -1) {
+                query = "Select * from Products where \"AccountID\" = ? AND \"CategoryID\" = ?";
+                requestQuery = conn.prepareStatement(query);
+                requestQuery.setInt(1, accountID);
+                requestQuery.setInt(2, catID);
+            } else {
+               query = "Select * from Products where \"AccountID\" = ?";
+                requestQuery = conn.prepareStatement(query);
+                requestQuery.setInt(1, accountID);
+            }
+
+            rset = requestQuery.executeQuery();
+            while (rset.next()) {
+                sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
+                sb.append("<input type=\"text\" name=\"prodID\" value=\"" + String.valueOf(rset.getInt("ProductID")) + "\" style=\"display: none\"/>");
+                sb.append("Name: <input type=\"text\" name=\"Name\" value=\"" + rset.getString("Name") + "\" style=\"text-align: center\"/>");
+                sb.append("SKU: <input type=\"text\" name=\"SKU\" value=\"" + rset.getString("SKU") + "\" style=\"text-align: center\"/>");
+                sb.append("Price: <input type=\"text\" name=\"Price\" value=\"" + rset.getString("Price") + "\" style=\"text-align: center\"/>");
+                sb.append("<input type=\"submit\" name=\"productFunc\" value=\"Delete\"/>");
+                sb.append("<input type=\"submit\" name=\"productFunc\" value=\"Update\"/><br/>");
                 sb.append("</form>");
             }
             return sb.toString();
         } catch (Exception e) {
+            //printStackTrace(e, out);
             return sb.toString();
         }
     }
@@ -119,6 +175,49 @@ public class DB extends HttpServlet {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private Boolean insertProduct(String name, String SKU, String price, int AccountID, Integer catID, PrintWriter out) {
+        try {
+            if (name.equals("") || SKU.equals("") || price.equals("") || Integer.valueOf(price) < 0 || catID.equals(null))  {
+                return false;
+            }
+        } catch (Exception e) {
+            printStackTrace(e, out);
+            return false;
+        }
+        String query = "Select * from public.products where \"SKU\" = ?;";
+
+        PreparedStatement requestQuery;
+
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setString(1, SKU);
+            rset = requestQuery.executeQuery();
+            if (rset != null && rset.next()) {
+                return false;
+            }
+        } catch (Exception e) {
+        }
+        query = "INSERT INTO public.products(\"SKU\", \"CategoryID\", \"Price\", \"Name\", \"AccountID\")\n" +
+                "Select ?, ?, ?, ?, ?\n" +
+                "WHERE \n" +
+                "Not Exists (Select * from public.products where \"SKU\" = ?)\n;";
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setString(1, SKU);
+            requestQuery.setInt(2, catID);
+            requestQuery.setString(3, price);
+            requestQuery.setString(4, name);
+            requestQuery.setInt(5, AccountID);
+            requestQuery.setString(6, SKU);
+            requestQuery.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            printStackTrace(e, out);
+            return false;
+        }
+
     }
 
     private Boolean deleteCategory(int catID, int AccountID, PrintWriter out) {
@@ -217,6 +316,7 @@ public class DB extends HttpServlet {
                         "            width: 200px;\n" +
                         "            padding: 0px;\n" +
                         "            top: 10px;\n" +
+                        "            border: 3px solid #660000;\n" +
                         "        }\n" +
                         "        .frame {\n" +
                         "            position: absolute;\n" +
@@ -225,6 +325,7 @@ public class DB extends HttpServlet {
                         "            right: 10px;\n" +
                         "            top: 10px;\n" +
                         "            bottom: 10px;\n" +
+                        "            border: 3px solid #009900;\n" +
                         "        }\n" +
                         "    </style>\n" +
                         "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
@@ -372,11 +473,53 @@ public class DB extends HttpServlet {
                         "<body>\n" +
                         "<div class=\"frame\">\n" +
                         "<div class=\"frameleft\">\n");
-                out.println(selectCategoryButtons(request.getSession().getAttribute("AccountID").toString()));
+                out.println(selectCategoryButtons(""));
                 out.println("</div>");
                 out.println("<div class=\"framecenter\">\n");
                 if (request.getSession().getAttribute("Role").equals("Owner")) {
+                    out.println("<h1>Welcome " + request.getSession().getAttribute("Username") + "</h1>\n");
                     out.println("<h1>Products</h1>");
+                    try {
+                        switch (request.getParameter("productFunc")) {
+                            case "Category":
+                                out.println(productSelect(Integer.valueOf(request.getParameter("productCatID")), (int) request.getSession().getAttribute("AccountID"), out));
+                                break;
+                            case "Delete":
+                                if (!deleteCategory(Integer.valueOf(request.getParameter("catID")), (int) request.getSession().getAttribute("AccountID"), out)) {
+                                    out.println("<p style=\"color:red;text-align:center\">data modification failure</p>");
+                                }
+                                break;
+                            case "Insert":
+                                if(!insertProduct(request.getParameter("Name"), request.getParameter("SKU"), request.getParameter("Price"),
+                                        (int) request.getSession().getAttribute("AccountID"), Integer.valueOf(request.getParameter("catID")), out)) {
+                                    out.println("<p style=\"color:red;text-align:center\">data modification failure</p>");
+                                }
+                                break;
+                            case "Update":
+                                if (!updateCategory(Integer.valueOf(request.getParameter("catID")), request.getParameter("Name"), request.getParameter("Description"), (int) request.getSession().getAttribute("AccountID"), out)) {
+                                    out.println("<p style=\"color:red;text-align:center\">data modification failure</p>");
+                                }
+                                break;
+                            default:
+                                out.println("IT DIDN'T HIT ANYTHING");
+                                break;
+
+                        }
+                    } catch (Exception e) {
+                        printStackTrace(e, out);
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("<form action=\"/DB?func=Products\" method=\"post\">\n");
+                    sb.append("Name: <input type=\"text\" name=\"Name\" value=\"\" style=\"text-align: center\"/>");
+                    sb.append("SKU: <input type=\"text\" name=\"SKU\" value=\"\" style=\"text-align: center\"/>");
+                    sb.append("Price: <input type=\"text\" name=\"Price\" value=\"\" style=\"text-align: center\"/>");
+                    sb.append("Category: <select name=\"catID\">");
+                    sb.append(categoryDropDown());
+                    sb.append("</select>");
+                    sb.append("<input type=\"submit\" name=\"productFunc\" value=\"Insert\"/>");
+                    sb.append("</form>");
+                    out.println(sb.toString());
+
                 } else {
                     out.println("this page is available to owners only");
                 }
@@ -618,6 +761,7 @@ public class DB extends HttpServlet {
                 request.getRequestDispatcher("/DB?func=home").forward(request, response);
                 out.print("<h1>Success! Found User: " + rset.getString("Username") + "</h1>");
             }
+            out.print("<h1>Failure, no user found with that name!</h1>");
         } catch (Exception e) {
             StackTraceElement[] st = e.getStackTrace();
             for (StackTraceElement s : st) {
