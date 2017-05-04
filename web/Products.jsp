@@ -1,3 +1,4 @@
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <style>
@@ -10,14 +11,77 @@
             bottom: 10px;
             padding: 10px;
         }
+        .table {
+            border: 1px solid blue;
+            min-width: 400px;
+            min-height: 300px;
+        }
     </style>
     <link rel="stylesheet" href="css/bootstrap.css">
     <meta charset="UTF-8">
     <title>Login</title>
 </head>
 <body>
-<div class="center">
-    <h2>Products</h2>
+<div>
+    <h2 class="center">Products</h2>
+    <h2 class="center"><%= request.getParameter("username") %></h2>
+
+
+
+    <%--Reload the page when you select a category--%>
+    <form action="/Servlet?func=products" method="post" id="catForm">
+    <table class="table" style="float:left">
+        <tr>
+            <td>Categories</td>
+        </tr>
+        <c:forEach items="${categoriesList}" var="category">
+        <tr>
+            <td><button type="submit" form="catForm" value ="${category.id}" name="Category">${category.name}</button></td>
+        </tr>
+        </c:forEach>
+    </table>
+    </form>
+
+    <form action="/Servlet?func=products" method="post" id="searchAndUpdate">
+    <table class="table" style="float:left; text-align:center;">
+        <tr>
+            <td colspan="100">Search:&nbsp;&nbsp;<input type="text" name="searchField" style="width:200px;"/>&nbsp;<button type="submit" form="searchAndUpdate" >Search</button></td>
+        </tr>
+        <tr>
+            <td>Current Category <%= request.getParameter("currentCategory") %>  </td>            
+        </tr>
+        <!--Suppose ${list} points to a List<Object>, then the following-->
+        <tr>
+            <td>Product List</td>
+        </tr>
+        <c:forEach items="${productList}" var="product">
+            <tr>
+                <td>>SKU:&nbsp;<input type="text" name="productSKU" value="${product.sku}"/>Name:&nbsp;<input type="text" name="productName" value="${product.name}"/> Price:&nbsp;<input type="text" name="productPrice" value="${product.price}"/> <button type="submit" value="${product.productID}" name="ProductUpdate" form="searchAndUpdate" >Update</button><button type="submit" value="${product.productID}" name="ProductDelete" form="searchAndUpdate" >Delete</button></td>
+            </tr>
+        </c:forEach>
+        
+    </table>
+    </form>
+    <%--Start product add--%>
+    <form action="/Servlet?func=products" method="post"  id="newProduct">
+    <table>
+        <tr>
+                <td>
+                    Add a new product!
+                </td>
+            </tr>
+            <tr>
+                <td>SKU: <input name="newSKU" type="text"/> Price: <input name="newPrice" type="text"/> Name: <input name="newName" type="text"/><button type="submit" value="newProduct" name="ProductAdd" form="newProduct" >Add</button></td>
+            </tr>
+
+            <select name="CategorySelect">
+            <c:forEach items="${categoriesList}" var="category">
+                <option value="${category.id}">${category.name}</option>
+            </c:forEach>
+            </select>
+    </table>
+    </form>
+    
 </div>
 </body>
 </html>
