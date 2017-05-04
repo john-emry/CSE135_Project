@@ -26,7 +26,12 @@
     <h2 class="center">Products</h2>
     <h2 class="center"><%= request.getParameter("username") %></h2>
 
-
+    <%--Update this section so that admins see everuthing but  checkout page, users do not see categories and products--%>
+    <a href="/Servlet?func=?Categories" class="button">Categories</a>
+    <a href="/Servlet?func=?Products" class="button">Products</a>
+    <a href="/Servlet?func=?ProductsBrowsing" class="button">ProductsBrowsing</a>
+    <a href="/Servlet?func=?Categories" class="button">Categories</a>
+    <a href="/Servlet?func=?Categories" class="button">Check out</a>
 
     <%--Reload the page when you select a category--%>
     <form action="/Servlet?func=products" method="post" id="catForm">
