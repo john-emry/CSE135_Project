@@ -5,7 +5,7 @@
 import java.sql.*;
 
 import java.io.*;
-import java.util.Enumeration;
+import java.util.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
 
@@ -47,9 +47,9 @@ public class Servlet extends HttpServlet {
         }
     }
 
-    private String selectCategoryButtons(String notChoose) {
+    private List<Map<String, String>> categoryList(String notChoose) {
         PreparedStatement requestQuery;
-        StringBuilder sb = new StringBuilder();
+        ArrayList<Map<String, String>> categories = new ArrayList<Map<String, String>>();
         if (notChoose.equals("")) {
             String query = "Select * from Categories";
             try {
@@ -74,22 +74,16 @@ public class Servlet extends HttpServlet {
 
 
             while (rset.next()) {
-                sb.append("<form action=\"/Servlet?func=Products\" method=\"post\">\n");
-                sb.append("<input type=\"text\" name=\"productCatID\" value=\"" + rset.getInt("CategoryID") + "\" style=\"display: none\"/>");
-                sb.append("<input type=\"text\" name=\"productFunc\" value=\"Category\" style=\"display: none\"/>");
-                sb.append("<input type=\"submit\" name=\"Name\" value=\"" + String.valueOf(rset.getString("Name")) + "\"/>");
-                sb.append("</form>");
+                HashMap<String, String> category = new HashMap<String, String>();
+                category.put("name", rset.getString("name"));
+                category.put("id", String.valueOf(rset.getInt("CategoryID")));
             }
             if (!notChoose.equals("-1")) {
-                sb.append("<form action=\"/Servlet?func=Products\" method=\"post\">\n");
-                sb.append("<input type=\"text\" name=\"productCatID\" value=\"-1\" style=\"display: none\"/>");
-                sb.append("<input type=\"text\" name=\"productFunc\" value=\"Category\" style=\"display: none\"/>");
-                sb.append("<input type=\"submit\" name=\"Name\" value=\"All Products\"/>");
-                sb.append("</form>");
+                Category category = new Category("All Products", -1);
             }
-            return sb.toString();
+            return categories;
         } catch (Exception e) {
-            return sb.toString();
+            return categories;
         }
     }
 
@@ -495,7 +489,17 @@ public class Servlet extends HttpServlet {
                         "</html>");
                 break;
             case "Products":
-                out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
+                Enumeration<String> enumeration = request.getParameterNames();
+                while (enumeration.hasMoreElements()) {
+                    String key = enumeration.nextElement();
+                    out.println(key + ", " + request.getParameterMap().get(key)[0]);
+                }
+
+                request.setAttribute("categoriesList", categoryList("-1"));
+                RequestDispatcher dispatcher = request.getRequestDispatcher("Products.jsp");
+                dispatcher.forward(request, response);
+
+                /*out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
                         "<head>\n" +
                         "    <style>\n" +
                         "        .center {\n" +
@@ -621,7 +625,7 @@ public class Servlet extends HttpServlet {
                         "</div>\n" +
                         "\n" +
                         "</body>\n" +
-                        "</html>");
+                        "</html>");*/
                 break;
             case "Products Browsing":
                 out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
@@ -843,5 +847,16 @@ public class Servlet extends HttpServlet {
 
     public void destroy() {
 
+    }
+}
+
+class Category {
+
+    public String name;
+    public String id;
+
+    public Category (String name, int id) {
+        this.name = name;
+        this.id = String.valueOf(id);
     }
 }
