@@ -768,7 +768,14 @@ public class Servlet extends HttpServlet {
                 dispatcher.forward(request, response);
                 break;
             case "Confirmation":
-
+                tempCart = request.getSession().getAttribute("shoppingCart");
+                try {
+                    List<Map<String, String>> cart = (List<Map<String, String>>) tempCart;
+                    request.setAttribute("shoppingCart", cart);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                insertOrderHistory();
                 break;
             default:
                 break;
