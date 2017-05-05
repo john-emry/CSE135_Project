@@ -82,12 +82,14 @@ public class Servlet extends HttpServlet {
             }
             return categories;
         } catch (Exception e) {
+            e.printStackTrace();
             return categories;
         }
     }
 
-    private String productSelect(int catID, int accountID, PrintWriter out) {
+    private List<Map<String, String>> productSelect(int catID, int accountID, String searchCriteria) {
         StringBuilder sb = new StringBuilder();
+        ArrayList<Map<String, String>> products = new ArrayList<>();
         try {
             String query = "";
             PreparedStatement requestQuery;
@@ -104,19 +106,19 @@ public class Servlet extends HttpServlet {
 
             rset = requestQuery.executeQuery();
             while (rset.next()) {
-                sb.append("<form action=\"/Servlet?func=Products\" method=\"post\">\n");
-                sb.append("<input type=\"text\" name=\"prodID\" value=\"" + String.valueOf(rset.getInt("ProductID")) + "\" style=\"display: none\"/>");
-                sb.append("Name: <input type=\"text\" name=\"Name\" value=\"" + rset.getString("Name") + "\" style=\"text-align: center\"/>");
-                sb.append("SKU: <input type=\"text\" name=\"SKU\" value=\"" + rset.getString("SKU") + "\" style=\"text-align: center\"/>");
-                sb.append("Price: <input type=\"text\" name=\"Price\" value=\"" + rset.getString("Price") + "\" style=\"text-align: center\"/>");
-                sb.append("<input type=\"submit\" name=\"productFunc\" value=\"Delete\"/>");
-                sb.append("<input type=\"submit\" name=\"productFunc\" value=\"Update\"/><br/>");
-                sb.append("</form>");
+                if (rset.getString("Name").contains(searchCriteria)) {
+                    HashMap<String, String> product = new HashMap<>();
+                    product.put("name", rset.getString("Name"));
+                    product.put("sku", rset.getString("SKU"));
+                    product.put("price", rset.getString("Price"));
+                    product.put("productID", String.valueOf(rset.getInt("ProductID")));
+                    products.add(product);
+                }
             }
-            return sb.toString();
+            return products;
         } catch (Exception e) {
-            //////PrintStackTrace(e, out);
-            return sb.toString();
+            e.printStackTrace();
+            return products;
         }
     }
 
@@ -271,7 +273,7 @@ public class Servlet extends HttpServlet {
             requestQuery.executeUpdate();
             return true;
         } catch (Exception e) {
-            ////PrintStackTrace(e, out);
+            e.printStackTrace();
             return false;
         }
 
@@ -492,150 +494,68 @@ public class Servlet extends HttpServlet {
                 String category;
                 category =(request.getParameter("Category"));
                 if (category == null) {
-                    category = "-1";
+                    category = request.getSession().getAttribute("currentCategoryID").toString();
+                    if (category == null) {
+                        category = "-1";
+                    }
+                } else {
+                    request.getSession().setAttribute("productSearchField", "");
+                }
+
+                String searchCriteria;
+                searchCriteria = request.getParameter("searchField");
+                System.out.println(searchCriteria);
+                if (searchCriteria == null) {
+                    try {
+                        searchCriteria = request.getSession().getAttribute("productSearchField").toString();
+                    } catch (Exception e) {
+                        searchCriteria = "";
+                    }
+                } else {
+                    request.getSession().setAttribute("productSearchField", searchCriteria);
+                }
+
+                if (!(request.getParameter("ProductAdd") == null)) {
+                    insertProduct(request.getParameter("newName"), request.getParameter("newSKU"), request.getParameter("newPrice"), Integer.valueOf(request.getSession().getAttribute("AccountID").toString()),
+                            Integer.valueOf(request.getParameter("CategorySelect")), out);
+                } else if (request.getParameter("ProductDelete") != null) {
+                    productDelete(Integer.valueOf(request.getParameter("ProductDelete")), out);
+                } else if (request.getParameter("ProductUpdate") != null) {
+                    productUpdate(
+                            Integer.valueOf(request.getParameter("ProductUpdate")),
+                            request.getParameter("productName"),
+                            request.getParameter("productSKU"),
+                            request.getParameter("productPrice"));
                 }
 
                 request.setAttribute("categoriesList", categoryList(category));
+                request.setAttribute("categoriesDropDown", categoryList("-1"));
                 try {
-                    ResultSet categories = selectCategoryForID(request.getParameter("Category"));
+                    ResultSet categories = selectCategoryForID(category);
                     if (categories != null && categories.next()) {
-                        request.setAttribute("currentCategory", selectCategoryForID(request.getParameter("Category")).getString("Name"));
+                        request.setAttribute("currentCategory", categories.getString("Name"));
+                        request.getSession().setAttribute("currentCategoryID", categories.getString("CategoryID"));
                     } else {
                         request.setAttribute("currentCategory", "All Products");
+                        request.getSession().setAttribute("currentCategoryID", "-1");
                     }
                 } catch (Exception e) {
+                    e.printStackTrace();
                     request.setAttribute("currentCategory", "All Products");
+                    request.getSession().setAttribute("currentCategoryID", "-1");
                 }
+
+                try {
+                    request.setAttribute("productList", productSelect(Integer.valueOf(request.getSession().getAttribute("currentCategoryID").toString()),
+                            Integer.valueOf(request.getSession().getAttribute("AccountID").toString()), searchCriteria));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    request.setAttribute("productList", productSelect(Integer.valueOf(request.getParameter("Category")),
+                            Integer.valueOf(request.getSession().getAttribute("AccountID").toString()), searchCriteria));
+                }
+
                 RequestDispatcher dispatcher = request.getRequestDispatcher("Products.jsp");
                 dispatcher.forward(request, response);
-
-                /*out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
-                        "<head>\n" +
-                        "    <style>\n" +
-                        "        .center {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "        .left {\n" +
-                        "            text-align: left;\n" +
-                        "            width: 200px;\n" +
-                        "            padding: 0px;\n" +
-                        "            top: 10px;\n" +
-                        "            border: 3px solid #660000;\n" +
-                        "        }\n" +
-                        "        .frame {\n" +
-                        "            position: absolute;\n" +
-                        "            padding: 10px;\n" +
-                        "            left: 210px;\n" +
-                        "            right: 10px;\n" +
-                        "            top: 10px;\n" +
-                        "            bottom: 10px;\n" +
-                        "            border: 3px solid #009900;\n" +
-                        "        }\n" +
-                        "       .frameleft {\n" +
-                        "            text-align: left;\n" +
-                        "            width: 200px;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "        .framecenter {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "    </style>\n" +
-                        "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Products</title>\n" +
-                        "</head>\n" +
-                        "<body>\n" +
-                        "<div class=\"frame\">\n" +
-                        "<div class=\"frameleft\">\n");
-                try {
-                    out.println(selectCategoryButtons(request.getParameter("productCatID")));
-                } catch (Exception e) {
-                    try {
-                        out.println(selectCategoryButtons(request.getSession().getAttribute("productCatID").toString()));
-                    } catch (Exception err) {
-                        out.println(selectCategoryButtons(""));
-                    }
-                }
-                out.println("</div>");
-                out.println("<div class=\"framecenter\">\n");
-                if (request.getSession().getAttribute("Role").equals("Owner")) {
-                    out.println("<h1>Welcome " + request.getSession().getAttribute("Username") + "</h1>\n");
-                    out.println("<h1>Products</h1>");
-                    out.println("<form action=\"/Servlet?func=Products\" method=\"post\">\n");
-                    out.println("Name: <input type=\"text\" name=\"Search\" value=\"\" style=\"text-align: center\"/>");
-                    out.println("<input type=\"submit\" name=\"productFunc\" value=\"Search\"/><br/>");
-                    try {
-                        switch (request.getParameter("productFunc")) {
-                            case "Delete":
-                                if (!productDelete(Integer.valueOf(request.getParameter("prodID")), out)) {
-                                    out.println("<p style=\"color:red;text-align:center\">data modification failure</p>");
-                                }
-                                break;
-                            case "Insert":
-                                if(!insertProduct(request.getParameter("Name"), request.getParameter("SKU"), request.getParameter("Price"),
-                                        (int) request.getSession().getAttribute("AccountID"), Integer.valueOf(request.getParameter("catID")), out)) {
-                                    out.println("<p style=\"color:red;text-align:center\">data modification failure</p>");
-                                }
-                                break;
-                            case "Update":
-                                if (!productUpdate(Integer.valueOf(request.getParameter("prodID")), request.getParameter("Name"), request.getParameter("SKU"), request.getParameter("Price"))) {
-                                    out.println("<p style=\"color:red;text-align:center\">data modification failure</p>");
-                                }
-                                break;
-                            default:
-                                break;
-
-                        }
-                    } catch (Exception e) {
-                        //PrintStackTrace(e, out);
-                    }
-                    try {
-                        out.println(productSelect(Integer.valueOf(request.getParameter("productCatID")), (int) request.getSession().getAttribute("AccountID"), out));
-                        request.getSession().setAttribute("productCatID", request.getParameter("productCatID"));
-                    } catch (Exception e) {
-                        try {
-                            out.println(productSelect(Integer.valueOf(request.getSession().getAttribute("productCatID").toString()), (int) request.getSession().getAttribute("AccountID"), out));
-                            request.getSession().setAttribute("productCatID", request.getParameter("productCatID"));
-                        } catch (Exception err) {
-                            //PrintStackTrace(err, out);
-                        }
-                    }
-
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("<form action=\"/Servlet?func=Products\" method=\"post\">\n");
-                    sb.append("Name: <input type=\"text\" name=\"Name\" value=\"\" style=\"text-align: center\"/>");
-                    sb.append("SKU: <input type=\"text\" name=\"SKU\" value=\"\" style=\"text-align: center\"/>");
-                    sb.append("Price: <input type=\"text\" name=\"Price\" value=\"\" style=\"text-align: center\"/>");
-                    sb.append("Category: <select name=\"catID\">");
-                    sb.append(categoryDropDown());
-                    sb.append("</select>");
-                    sb.append("<input type=\"submit\" name=\"productFunc\" value=\"Insert\"/>");
-                    sb.append("</form>");
-                    out.println(sb.toString());
-
-                } else {
-                    out.println("this page is available to owners only");
-                }
-                out.println(       "</div>\n" +
-                        "</div>\n" +
-                        "<div class=\"left\">\n" +
-                        "<form action=\"/Servlet\" method=\"post\">\n");
-                if (request.getSession().getAttribute("Role").equals("Owner")) {
-                    out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n");
-                } else {
-                    out.println("    <input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n");
-                }
-                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
-                        "    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
-                        "</form>\n" +
-                        "</div>\n" +
-                        "\n" +
-                        "</body>\n" +
-                        "</html>");*/
                 break;
             case "Products Browsing":
                 out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +

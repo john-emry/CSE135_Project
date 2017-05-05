@@ -56,10 +56,10 @@
     <form action="/Servlet?func=Products" method="post" id="searchAndUpdate">
     <table class="table" style="float:left; text-align:center;">
         <tr>
-            <td colspan="100">Search:&nbsp;&nbsp;<input type="text" name="searchField" style="width:200px;"/>&nbsp;<button type="submit" form="searchAndUpdate" >Search</button></td>
+            <td colspan="100">Search:&nbsp;&nbsp;<input type="text" name="searchField" style="width:200px;"/>&nbsp;<button type="submit" name="productsSearch" form="searchAndUpdate" >Search</button></td>
         </tr>
         <tr>
-            <td>Current Category <%= request.getParameter("currentCategory") %>  </td>            
+            <td>Current Category <%= request.getAttribute("currentCategory") %>  </td>
         </tr>
         <!--Suppose ${list} points to a List<Object>, then the following-->
         <tr>
@@ -67,7 +67,7 @@
         </tr>
         <c:forEach items="${productList}" var="product">
             <tr>
-                <td>>SKU:&nbsp;<input type="text" name="productSKU" value="${product['sku']}"/>Name:&nbsp;<input type="text" name="productName" value="${product['name']}"/> Price:&nbsp;<input type="text" name="productPrice" value="${product['price']}"/> <button type="submit" value="${product.['productID']}" name="ProductUpdate" form="searchAndUpdate" >Update</button><button type="submit" value="${product.productID}" name="ProductDelete" form="searchAndUpdate" >Delete</button></td>
+                <td>SKU:&nbsp;<input type="text" name="productSKU" value="${product['sku']}"/>Name:&nbsp;<input type="text" name="productName" value="${product['name']}"/> Price:&nbsp;<input type="text" name="productPrice" value="${product['price']}"/> <button type="submit" value="${product['productID']}" name="ProductUpdate" form="searchAndUpdate" >Update</button><button type="submit" value="${product.productID}" name="ProductDelete" form="searchAndUpdate" >Delete</button></td>
             </tr>
         </c:forEach>
         
@@ -82,14 +82,15 @@
                 </td>
             </tr>
             <tr>
-                <td>SKU: <input name="newSKU" type="text"/> Price: <input name="newPrice" type="text"/> Name: <input name="newName" type="text"/><button type="submit" value="newProduct" name="ProductAdd">Add</button></td>
-            </tr>
-
-            <select name="CategorySelect">
-            <c:forEach items="${categoriesList}" var="category">
-                <option value="${category['id']}">${category['name']}</option>
-            </c:forEach>
-            </select>
+                <td>SKU: <input name="newSKU" type="text"/> Price: <input name="newPrice" type="text"/> Name: <input name="newName" type="text"/></td>
+            <td>
+                Category: <select name="CategorySelect">
+                <c:forEach items="${categoriesDropDown}" var="category">
+                    <option value="${category['id']}">${category['name']}</option>
+                </c:forEach>
+                </select>
+                <button type="submit" value="newProduct" name="ProductAdd">Add</button>
+            </td>
     </table>
     </form>
     
