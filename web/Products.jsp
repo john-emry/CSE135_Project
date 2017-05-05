@@ -28,11 +28,17 @@
     <h2 class="center"><%= request.getParameter("username") %></h2>
 
     <%--Update this section so that admins see everuthing but  checkout page, users do not see categories and products--%>
-    <a href="/Servlet?func=Categories" class="button">Categories</a>
-    <a href="/Servlet?func=Products" class="button">Products</a>
-    <a href="/Servlet?func=ProductsBrowsing" class="button">Products Browsing</a>
-    <a href="/Servlet?func=ProductsOrder" class="button">Products Order</a>
-    <a href="/Servlet?func=Checkout" class="button">Check out</a>
+    <%
+        if (request.getSession().getAttribute("Role").equals("Owner")) {
+            out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >");
+            out.println("<a href = \"/Servlet?func=Products\" class=\"button\" > Products </a >");
+        } else {
+            out.println("<a href=\"/Servlet?func=Checkout\" class=\"button\">Check out</a>");
+        }
+        out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>");
+        out.println("<a href=\"/Servlet?func=ProductsOrder\" class=\"button\">Products Order</a>");
+
+    %>
 
     <%--Reload the page when you select a category--%>
     <form action="/Servlet?func=Products" method="post" id="catForm">
