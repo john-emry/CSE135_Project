@@ -21,14 +21,14 @@
     <script type="text/javascript">
 
     </script>
-    <link rel="stylesheet" href="css/bootstrap.css">
+    
     <meta charset="UTF-8">
     <title>Products browsing</title>
 </head>
 <body>
 <div>
     <h2 class="center">Products Browsing</h2>
-    <h2 class="center"><%= request.getParameter("username") %></h2>
+    <h2 class="center"><%= request.getSession.getAttribute("username") %></h2>
 
     <%--Update this section so that admins see everuthing but  checkout page, users do not see categories and products--%>
     <%
@@ -36,10 +36,10 @@
             out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >");
             out.println("<a href = \"/Servlet?func=Products\" class=\"button\" > Products </a >");
         } else {
-            out.println("<a href=\"/Servlet?func=Checkout\" class=\"button\">Check out</a>");
+            out.println("<a href=\"/Servlet?func=BuyShoppingCart\" class=\"button\">Buy Shopping Cart</a>");
         }
         out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>");
-        out.println("<a href=\"/Servlet?func=ProductsOrder\" class=\"button\">Products Order</a>");
+        <%--out.println("<a href=\"/Servlet?func=ProductsOrder\" class=\"button\">Products Order</a>");--%>
     %>
 
     <%--Reload the page when you select a category--%>
@@ -62,7 +62,7 @@
             <td colspan="100">Search:&nbsp;&nbsp;<input type="text" name="searchField" style="width:200px;"/>&nbsp;<button type="submit" form="productBrowsing" >Search</button></td>
         </tr>
         <tr>
-            <td>Current Category <%= request.getParameter("currentCategory") %>  </td>            
+            <td>Current Category <%= request.getSession.getAttribute("currentCategory") %>  </td>
         </tr>
         <!--Suppose ${list} points to a List<Object>, then the following-->
         <tr>
@@ -70,8 +70,8 @@
         </tr>
         <c:forEach items="${productList}" var="product">
             <tr>
-                <td>>SKU:&nbsp;${product['sku']}>Name:&nbsp;${product['name']}Price:&nbsp;${product['price']}&nbsp;Quantity:&nbsp;<input style="width:20px;" name="ProductQuantity" type="number" id="ProductQuantity"/> 
-                    <button type="submit" value="${product.['productID']}" name="AddToCart" form="productBrowsing" id="AddToCart">Add to cart</button>
+                <td>>SKU:&nbsp;${product['sku']}>Name:&nbsp;${product['name']}Price:&nbsp;${product['price']}&nbsp;Quantity:&nbsp; 
+                    <a href = "/Servlet?func=ProductOrder?productID=${product['id']}" >Order Product</a>
                 </td>
             </tr>
         </c:forEach>
