@@ -171,10 +171,23 @@ public class Servlet extends HttpServlet {
             ////PrintStackTrace(e, out);
             return false;
         }
-        String query = "UPDATE public.Products\n" +
+        String query = "SELECT \"SKU\" FROM public.Products WHERE \"SKU\"=?";
+        PreparedStatement requestQuery;
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setString(1, SKU);
+            rset = requestQuery.executeQuery();
+            if (rset != null && rset.next()) {
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        query = "UPDATE public.Products\n" +
                 "SET \"Name\"= ?, \"SKU\"=?, \"Price\"=?\n" +
                 "WHERE \"ProductID\"=?;";
-        PreparedStatement requestQuery;
         try {
             requestQuery = conn.prepareStatement(query);
             requestQuery.setString(1, name);
@@ -184,6 +197,7 @@ public class Servlet extends HttpServlet {
             requestQuery.executeUpdate();
             return true;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
@@ -412,6 +426,9 @@ public class Servlet extends HttpServlet {
         response.setContentType("text/html");
         PrintWriter out = response.getWriter();
         switch(request.getParameter("func")) {
+            case "NotLoggedIn":
+                out.println("<h1>Only Those Logged In May See This Page</h1>");
+                break;
             case "login":
                 request.getSession().invalidate();
                 login(request.getParameter("username"), out, response, request);
@@ -556,8 +573,12 @@ public class Servlet extends HttpServlet {
                 String category;
                 category =(request.getParameter("Category"));
                 if (category == null) {
-                    category = request.getSession().getAttribute("currentCategoryID").toString();
-                    if (category == null) {
+                    try {
+                        category = request.getSession().getAttribute("currentCategoryID").toString();
+                        if (category == null) {
+                            category = "-1";
+                        }
+                    } catch (Exception e) {
                         category = "-1";
                     }
                 } else {
@@ -578,16 +599,22 @@ public class Servlet extends HttpServlet {
                 }
 
                 if (!(request.getParameter("ProductAdd") == null)) {
-                    insertProduct(request.getParameter("newName"), request.getParameter("newSKU"), request.getParameter("newPrice"), Integer.valueOf(request.getSession().getAttribute("AccountID").toString()),
-                            Integer.valueOf(request.getParameter("CategorySelect")), out);
+                    if (!insertProduct(request.getParameter("newName"), request.getParameter("newSKU"), request.getParameter("newPrice"), Integer.valueOf(request.getSession().getAttribute("AccountID").toString()),
+                            Integer.valueOf(request.getParameter("CategorySelect")), out)) {
+                        request.setAttribute("errorMessage", "INSERT FAILURE");
+                    }
                 } else if (request.getParameter("ProductDelete") != null) {
-                    productDelete(Integer.valueOf(request.getParameter("ProductDelete")), out);
+                    if (!productDelete(Integer.valueOf(request.getParameter("ProductDelete")), out)) {
+                        request.setAttribute("errorMessage", "DELETE FAILURE");
+                    }
                 } else if (request.getParameter("ProductUpdate") != null) {
-                    productUpdate(
+                    if (!productUpdate(
                             Integer.valueOf(request.getParameter("ProductUpdate")),
                             request.getParameter("productName"),
                             request.getParameter("productSKU"),
-                            request.getParameter("productPrice"));
+                            request.getParameter("productPrice"))) {
+                        request.setAttribute("errorMessage", "UPDATE FAILURE");
+                    }
                 }
 
                 request.setAttribute("categoriesList", categoryList(category));

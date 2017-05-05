@@ -27,15 +27,22 @@
     <h2 class="center">Products</h2>
     <h2 class="center"><%= request.getSession().getAttribute("Username") %></h2>
 
-    <%--Update this section so that admins see everuthing but  checkout page, users do not see categories and products--%>
+    <%--Update this section so that admins see everything but checkout page, users do not see categories and products--%>
     <%
-        if (request.getSession().getAttribute("Role").equals("Owner")) {
-            out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >");
-        } else {
-            out.println("<a href=\"/Servlet?func=Checkout\" class=\"button\">Buy Shopping Cart</a>");
+        try {
+            if (request.getSession().getAttribute("Role").equals("")) {
+                throw new Exception();
+            }
+            if (request.getSession().getAttribute("Role").equals("Owner")) {
+                out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >  ");
+            } else {
+                out.println("<a href=\"/Servlet?func=Checkout\" class=\"button\">Buy Shopping Cart</a>  ");
+            }
+            out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>  ");
+        } catch (Exception e) {
+        e.printStackTrace();
+        request.getRequestDispatcher("/Servlet?func=NotLoggedIn").forward(request, response);
         }
-        out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>");
-
     %>
 
     <%--Reload the page when you select a category--%>
@@ -63,6 +70,18 @@
         <!--Suppose ${list} points to a List<Object>, then the following-->
         <tr>
             <td>Product List</td>
+        </tr>
+        <tr>
+            <%
+                try {
+                    String s = request.getAttribute("errorMessage").toString();
+                    if (s != null && !s.equals("")) {
+                        out.println(s);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            %>
         </tr>
         <c:forEach items="${productList}" var="product">
             <tr>

@@ -32,11 +32,19 @@
 
     <%--Update this section so that admins see everrything but  checkout page, users do not see categories and products--%>
     <%
-        if (request.getSession().getAttribute("Role").equals("Owner")) {
-            out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >");
-            out.println("<a href = \"/Servlet?func=Products\" class=\"button\" > Products </a >");
+        try {
+            if (request.getSession().getAttribute("Role").equals("")) {
+                throw new Exception();
+            }
+            if (request.getSession().getAttribute("Role").equals("Owner")) {
+                out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >");
+                out.println("<a href = \"/Servlet?func=Products\" class=\"button\" > Products </a >");
+            }
+            out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>");
+        } catch (Exception e) {
+        e.printStackTrace();
+        request.getRequestDispatcher("/Servlet?func=NotLoggedIn").forward(request, response);
         }
-        out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>");
     %>
 
         <%--Shopping cart contents--%>
