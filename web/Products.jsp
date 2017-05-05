@@ -25,13 +25,12 @@
 <body>
 <div>
     <h2 class="center">Products</h2>
-    <h2 class="center"><%= request.getParameter("username") %></h2>
+    <h2 class="center"><%= request.getSession().getAttribute("Username") %></h2>
 
     <%--Update this section so that admins see everuthing but  checkout page, users do not see categories and products--%>
     <%
         if (request.getSession().getAttribute("Role").equals("Owner")) {
             out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >");
-            out.println("<a href = \"/Servlet?func=Products\" class=\"button\" > Products </a >");
         } else {
             out.println("<a href=\"/Servlet?func=Checkout\" class=\"button\">Check out</a>");
         }

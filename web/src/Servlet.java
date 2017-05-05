@@ -27,20 +27,18 @@ public class Servlet extends HttpServlet {
         }
     }
 
-    private String categoryDropDown() {
-        String query = "Select * from Categories";
+    private ResultSet selectCategoryForID(String ID) throws Exception{
+        int intID = Integer.valueOf(ID);
+        String query = "Select * from Categories WHERE \"CategoryID\"=?";
         PreparedStatement requestQuery;
         StringBuilder sb = new StringBuilder();
-
         try {
             requestQuery = conn.prepareStatement(query);
+            requestQuery.setInt(1, intID);
             rset = requestQuery.executeQuery();
-            while (rset.next()) {
-                sb.append("<option value=\"" + rset.getString("CategoryID") + "\">" + rset.getString("Name") + "</option>\n");
-            }
-            return sb.toString();
+            return rset;
         } catch (Exception e) {
-            return sb.toString();
+            return rset;
         }
     }
 
@@ -490,13 +488,24 @@ public class Servlet extends HttpServlet {
                         "</html>");
                 break;
             case "Products":
-                Enumeration<String> enumeration = request.getParameterNames();
-                while (enumeration.hasMoreElements()) {
-                    String key = enumeration.nextElement();
-                    out.println(key + ", " + request.getParameterMap().get(key)[0]);
+
+                String category;
+                category =(request.getParameter("Category"));
+                if (category == null) {
+                    category = "-1";
                 }
 
-                request.setAttribute("categoriesList", categoryList("-1"));
+                request.setAttribute("categoriesList", categoryList(category));
+                try {
+                    ResultSet categories = selectCategoryForID(request.getParameter("Category"));
+                    if (categories != null && categories.next()) {
+                        request.setAttribute("currentCategory", selectCategoryForID(request.getParameter("Category")).getString("Name"));
+                    } else {
+                        request.setAttribute("currentCategory", "All Products");
+                    }
+                } catch (Exception e) {
+                    request.setAttribute("currentCategory", "All Products");
+                }
                 RequestDispatcher dispatcher = request.getRequestDispatcher("Products.jsp");
                 dispatcher.forward(request, response);
 
