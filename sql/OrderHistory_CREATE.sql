@@ -5,7 +5,6 @@ CREATE TABLE public.order_history
     "TotalPrice" text NOT NULL,
     "Date" date NOT NULL,
     "AccountID" integer NOT NULL,
-    "OrderHistoryProductsID" integer NOT NULL,
     PRIMARY KEY ("OrderHistoryID")
 )
 WITH (
