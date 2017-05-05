@@ -9,9 +9,6 @@ import java.util.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
 
-import oracle.jvm.hotspot.jfr.StackTrace;
-import org.postgresql.*;
-
 public class Servlet extends HttpServlet {
     private static Connection conn = null;
     private static Statement stmt = null;
@@ -22,7 +19,7 @@ public class Servlet extends HttpServlet {
         try {
             Class.forName("org.postgresql.Driver");
             DriverManager.registerDriver(new org.postgresql.Driver());
-            String dbURL = "jdbc:postgresql:CSE135?user=snapp&password=saving?bay";
+            String dbURL = "jdbc:postgresql:CSE135?user=postgres&password=saving?bay";
             conn = DriverManager.getConnection(dbURL);
             System.out.println("Connected to CSE135");
         } catch (Exception e) {
@@ -77,9 +74,13 @@ public class Servlet extends HttpServlet {
                 HashMap<String, String> category = new HashMap<String, String>();
                 category.put("name", rset.getString("name"));
                 category.put("id", String.valueOf(rset.getInt("CategoryID")));
+                categories.add(category);
             }
             if (!notChoose.equals("-1")) {
-                Category category = new Category("All Products", -1);
+                HashMap<String, String> category = new HashMap<>();
+                category.put("name", "All Products");
+                category.put("id", "-1");
+                categories.add(category);
             }
             return categories;
         } catch (Exception e) {
@@ -847,16 +848,5 @@ public class Servlet extends HttpServlet {
 
     public void destroy() {
 
-    }
-}
-
-class Category {
-
-    public String name;
-    public String id;
-
-    public Category (String name, int id) {
-        this.name = name;
-        this.id = String.valueOf(id);
     }
 }

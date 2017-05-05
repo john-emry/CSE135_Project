@@ -30,8 +30,8 @@
     <%--Update this section so that admins see everuthing but  checkout page, users do not see categories and products--%>
     <a href="/Servlet?func=Categories" class="button">Categories</a>
     <a href="/Servlet?func=Products" class="button">Products</a>
-    <a href="/Servlet?func=ProductsBrowsing" class="button">ProductsBrowsing</a>
-    <a href="/Servlet?func=ProductsOrder" class="button">Categories</a>
+    <a href="/Servlet?func=ProductsBrowsing" class="button">Products Browsing</a>
+    <a href="/Servlet?func=ProductsOrder" class="button">Products Order</a>
     <a href="/Servlet?func=Checkout" class="button">Check out</a>
 
     <%--Reload the page when you select a category--%>
@@ -42,7 +42,7 @@
         </tr>
         <c:forEach items="${categoriesList}" var="category">
         <tr>
-            <td><button type="submit" form="catForm" value ="${category.id}" name="Category">${category.name}</button></td>
+            <td><button type="submit" form="catForm" value ="${category['id']}" name="Category">${category['name']}</button></td>
         </tr>
         </c:forEach>
     </table>
@@ -62,7 +62,7 @@
         </tr>
         <c:forEach items="${productList}" var="product">
             <tr>
-                <td>>SKU:&nbsp;<input type="text" name="productSKU" value="${product.sku}"/>Name:&nbsp;<input type="text" name="productName" value="${product.name}"/> Price:&nbsp;<input type="text" name="productPrice" value="${product.price}"/> <button type="submit" value="${product.productID}" name="ProductUpdate" form="searchAndUpdate" >Update</button><button type="submit" value="${product.productID}" name="ProductDelete" form="searchAndUpdate" >Delete</button></td>
+                <td>>SKU:&nbsp;<input type="text" name="productSKU" value="${product['sku']}"/>Name:&nbsp;<input type="text" name="productName" value="${product['name']}"/> Price:&nbsp;<input type="text" name="productPrice" value="${product['price']}"/> <button type="submit" value="${product.['productID']}" name="ProductUpdate" form="searchAndUpdate" >Update</button><button type="submit" value="${product.productID}" name="ProductDelete" form="searchAndUpdate" >Delete</button></td>
             </tr>
         </c:forEach>
         
@@ -82,7 +82,7 @@
 
             <select name="CategorySelect">
             <c:forEach items="${categoriesList}" var="category">
-                <option value="${category.id}">${category.name}</option>
+                <option value="${category['id']}">${category['name']}</option>
             </c:forEach>
             </select>
     </table>
