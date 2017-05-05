@@ -429,6 +429,8 @@ public class Servlet extends HttpServlet {
             case "NotLoggedIn":
                 out.println("<h1>Only Those Logged In May See This Page</h1>");
                 break;
+            case "OwnersOnly":
+                out.println("<h1>Only owners may view this page</h1>");
             case "login":
                 request.getSession().invalidate();
                 login(request.getParameter("username"), out, response, request);

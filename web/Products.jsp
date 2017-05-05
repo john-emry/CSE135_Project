@@ -36,12 +36,17 @@
             if (request.getSession().getAttribute("Role").equals("Owner")) {
                 out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >  ");
             } else {
+                throw new Exception("Owners Only");
                 out.println("<a href=\"/Servlet?func=Checkout\" class=\"button\">Buy Shopping Cart</a>  ");
             }
             out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>  ");
         } catch (Exception e) {
-        e.printStackTrace();
-        request.getRequestDispatcher("/Servlet?func=NotLoggedIn").forward(request, response);
+            e.printStackTrace();
+            if (e.getMessage().equals("Owners Only")) {
+                request.getRequestDispatcher("/Servlet?func=OwnersOnly").forward(request, response);
+            } else {
+                request.getRequestDispatcher("/Servlet?func=NotLoggedIn").forward(request, response);
+            }
         }
     %>
 
