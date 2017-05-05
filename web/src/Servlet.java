@@ -27,7 +27,7 @@ public class Servlet extends HttpServlet {
         }
     }
 
-    private ResultSet selectCategoryForID(String ID) throws Exception{
+    private ResultSet selectCategoryForID(String ID) {
         int intID = Integer.valueOf(ID);
         String query = "Select * from Categories WHERE \"CategoryID\"=?";
         PreparedStatement requestQuery;
@@ -93,15 +93,22 @@ public class Servlet extends HttpServlet {
         try {
             String query = "";
             PreparedStatement requestQuery;
-            if (catID != -1) {
+            if (catID != -1 && accountID != -1) {
                 query = "Select * from Products where \"AccountID\" = ? AND \"CategoryID\" = ?";
                 requestQuery = conn.prepareStatement(query);
                 requestQuery.setInt(1, accountID);
                 requestQuery.setInt(2, catID);
-            } else {
+            } else if (accountID != -1) {
                query = "Select * from Products where \"AccountID\" = ?";
                 requestQuery = conn.prepareStatement(query);
                 requestQuery.setInt(1, accountID);
+            } else if (catID != -1){
+                query = "Select * from Products where \"CategoryID\" = ?";
+                requestQuery = conn.prepareStatement(query);
+                requestQuery.setInt(1, catID);
+            } else {
+                query = "Select * from Products";
+                requestQuery = conn.prepareStatement(query);
             }
 
             rset = requestQuery.executeQuery();
@@ -119,6 +126,21 @@ public class Servlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             return products;
+        }
+    }
+
+    private ResultSet selectProductForID(String ID) {
+        int intID = Integer.valueOf(ID);
+        String query = "Select * from Products WHERE \"ProductID\"=?";
+        PreparedStatement requestQuery;
+        StringBuilder sb = new StringBuilder();
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setInt(1, intID);
+            rset = requestQuery.executeQuery();
+            return rset;
+        } catch (Exception e) {
+            return rset;
         }
     }
 
@@ -352,6 +374,7 @@ public class Servlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         switch(request.getParameter("func")) {
             case "login":
+                request.getSession().invalidate();
                 login(request.getParameter("username"), out, response, request);
                 break;
             case "signup":
@@ -558,17 +581,38 @@ public class Servlet extends HttpServlet {
                 dispatcher.forward(request, response);
                 break;
             case "ProductsBrowsing":
+
                 if (request.getParameter("ProductBuy") != null) {
-                    List<String> cart;
                     try {
-                        cart = (List<String>) request.getSession().getAttribute("shoppingCart");
-                        cart.add(request.getParameter("ProductBuy"));
-                        request.getSession().setAttribute("shoppingCart", cart);
+                        HashMap<String, String> product = new HashMap<>();
+                        ResultSet productSet = selectProductForID(request.getParameter("ProductBuy"));
+                        if (productSet != null && productSet.next()) {
+                            product.put("sku", productSet.getString("SKU"));
+                            product.put("name", productSet.getString("Name"));
+                            product.put("price", productSet.getString("Price"));
+                            product.put("productID", productSet.getString("ProductID"));
+                            request.setAttribute("product", product);
+                        } else {
+                            throw new Exception("Result Set Empty");
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
-                        cart = new ArrayList<>();
-                        cart.add(request.getParameter("ProductBuy"));
-                        request.getSession().setAttribute("shoppingCart", cart);
+                    }
+                    try {
+                        Object tempCart = request.getSession().getAttribute("shoppingCart");
+                        if (tempCart instanceof List) {
+                            List<Map<String, String>> cart = (List<Map<String, String>>) tempCart;
+                            for (Map<String, String> m : cart) {
+                                System.out.println(m.get("sku"));
+                            }
+                            request.setAttribute("shoppingCart", cart);
+                        } else {
+                            request.getSession().setAttribute("shoppingCart", new ArrayList<>());
+                            throw new Exception("shoppingCart not found");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        request.getSession().setAttribute("shoppingCart", new ArrayList<>());
                     }
                     dispatcher = request.getRequestDispatcher("ProductOrder.jsp");
                     dispatcher.forward(request, response);
@@ -617,17 +661,47 @@ public class Servlet extends HttpServlet {
 
                 try {
                     request.setAttribute("productList", productSelect(Integer.valueOf(request.getSession().getAttribute("currentCategoryID").toString()),
-                            Integer.valueOf(request.getSession().getAttribute("AccountID").toString()), searchCriteria));
+                            -1, searchCriteria));
                 } catch (Exception e) {
                     e.printStackTrace();
                     request.setAttribute("productList", productSelect(Integer.valueOf(request.getParameter("Category")),
-                            Integer.valueOf(request.getSession().getAttribute("AccountID").toString()), searchCriteria));
+                            -1, searchCriteria));
                 }
                 dispatcher = request.getRequestDispatcher("ProductsBrowsing.jsp");
                 dispatcher.forward(request, response);
                 break;
-            case "Product Order":
-                dispatcher = request.getRequestDispatcher("ProductOrder.jsp");
+            case "ProductOrder":
+
+                String productID = request.getParameter("AddToCart");
+                String quantity = request.getParameter("ProductQuantity");
+                HashMap<String, String> product = new HashMap<>();
+
+                try {
+                    ResultSet productSet = selectProductForID(productID);
+                    if (productSet != null && productSet.next()) {
+                        product.put("sku", productSet.getString("SKU"));
+                        product.put("name", productSet.getString("Name"));
+                        product.put("price", productSet.getString("Price"));
+                        product.put("productID", productSet.getString("ProductID"));
+                        product.put("quantity", quantity);
+                        request.setAttribute("product", product);
+                    } else {
+                        throw new Exception("Result Set Empty");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                Object tempCart = request.getSession().getAttribute("shoppingCart");
+                try {
+                    List<Map<String, String>> cart = (List<Map<String, String>>) tempCart;
+                    cart.add(product);
+                    request.getSession().setAttribute("shoppingCart", cart);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                dispatcher = request.getRequestDispatcher("/Servlet?func=ProductsBrowsing");
                 dispatcher.forward(request, response);
                 break;
             case "Checkout":

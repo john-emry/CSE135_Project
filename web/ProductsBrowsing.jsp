@@ -36,7 +36,7 @@
             out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >");
             out.println("<a href = \"/Servlet?func=Products\" class=\"button\" > Products </a >");
         } else {
-            out.println("<a href=\"/Servlet?func=BuyShoppingCart\" class=\"button\">Buy Shopping Cart</a>");
+            out.println("<a href=\"/Servlet?func=Checkout\" class=\"button\">Buy Shopping Cart</a>");
         }
     %>
 
@@ -68,8 +68,7 @@
         </tr>
         <c:forEach items="${productList}" var="product">
             <tr>
-                <td>>SKU:&nbsp;${product['sku']}>Name:&nbsp;${product['name']}Price:&nbsp;${product['price']}&nbsp;Quantity:&nbsp;
-                    <button type="submit" value="${product['id']}" name="ProductBuy">Order Product</button>
+                <td>SKU:&nbsp;${product['sku']}&nbsp;Name:&nbsp;${product['name']}&nbsp;Price:&nbsp;${product['price']}&nbsp;<button type="submit" form="productBrowsing" value="${product['productID']}" name="ProductBuy">Order Product</button>
                 </td>
             </tr>
         </c:forEach>

@@ -32,10 +32,9 @@
         if (request.getSession().getAttribute("Role").equals("Owner")) {
             out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >");
         } else {
-            out.println("<a href=\"/Servlet?func=Checkout\" class=\"button\">Check out</a>");
+            out.println("<a href=\"/Servlet?func=Checkout\" class=\"button\">Buy Shopping Cart</a>");
         }
         out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>");
-        out.println("<a href=\"/Servlet?func=ProductsOrder\" class=\"button\">Products Order</a>");
 
     %>
 

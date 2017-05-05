@@ -28,7 +28,7 @@
 <body>
 <div>
     <h2 class="center">Product Order</h2>
-    <h2 class="center"><%= request.getSession.getAttribute("username") %></h2>
+    <h2 class="center"><%= request.getSession().getAttribute("Username") %></h2>
 
     <%--Update this section so that admins see everrything but  checkout page, users do not see categories and products--%>
     <%
@@ -36,7 +36,7 @@
             out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >");
             out.println("<a href = \"/Servlet?func=Products\" class=\"button\" > Products </a >");
         } else {
-            out.println("<a href=\"/Servlet?func=BuyShoppingCart\" class=\"button\">Buy Shopping Cart</a>");
+            out.println("<a href=\"/Servlet?func=Checkout\" class=\"button\">Buy Shopping Cart</a>");
         }
         out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>");
     %>
@@ -49,21 +49,18 @@
         </tr>
         <c:forEach items="${shoppingCart}" var="item">
             <tr>
-                <td>>SKU:&nbsp;${item['sku']}>&nbsp;Name:&nbsp;${item['name']}&nbsp;Price:&nbsp;${item['price']}&nbsp;Quantity:&nbsp;${item['quantity']}</td>
+                <td>SKU:&nbsp;${item['sku']}&nbsp;Name:&nbsp;${item['name']}&nbsp;Price:&nbsp;${item['price']}&nbsp;Quantity:&nbsp;${item['quantity']}</td>
             </tr>
         </c:forEach>
 
         <tr>
             <td>Product to buy</td>
         </tr>
-        <c:forEach items="${product}" var="product">
-            <tr>
-                <td>>SKU:&nbsp;${product['sku']}>Name:&nbsp;${product['name']}Price:&nbsp;${product['price']}&nbsp;Quantity:&nbsp;<input style="width:20px;" name="ProductQuantity" type="number" id="ProductQuantity"/> 
-                    <button type="submit" value="${product.['productID']}" name="AddToCart" form="ProductOrder" id="AddToCart">Add to cart</button>
-                </td>
-            </tr>
-        </c:forEach>
-        
+        <tr>
+            <td>SKU:&nbsp;${product['sku']}&nbsp;Name:&nbsp;${product['name']}&nbsp;Price:&nbsp;${product['price']}&nbsp;Quantity:&nbsp;<input style="width:50px;" name="ProductQuantity" type="number" id="ProductQuantity"/>
+                <button type="submit" value="${product['productID']}" name="AddToCart" form="ProductOrder" id="AddToCart">Add to cart</button>
+            </td>
+        </tr>
     </table>
     </form>
     
