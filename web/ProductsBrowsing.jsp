@@ -28,7 +28,7 @@
 <body>
 <div>
     <h2 class="center">Products Browsing</h2>
-    <h2 class="center"><%= request.getSession.getAttribute("username") %></h2>
+    <h2 class="center"><%= request.getSession().getAttribute("Username") %></h2>
 
     <%--Update this section so that admins see everuthing but  checkout page, users do not see categories and products--%>
     <%
@@ -38,12 +38,10 @@
         } else {
             out.println("<a href=\"/Servlet?func=BuyShoppingCart\" class=\"button\">Buy Shopping Cart</a>");
         }
-        out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>");
-        <%--out.println("<a href=\"/Servlet?func=ProductsOrder\" class=\"button\">Products Order</a>");--%>
     %>
 
     <%--Reload the page when you select a category--%>
-    <form action="/Servlet?func=Products" method="post" id="catForm">
+    <form action="/Servlet?func=ProductsBrowsing" method="post" id="catForm">
     <table class="table" style="float:left">
         <tr>
             <td>Categories</td>
@@ -56,13 +54,13 @@
     </table>
     </form>
 
-    <form action="/Servlet?func=Products" method="post" id="productBrowsing">
+    <form action="/Servlet?func=ProductsBrowsing" method="post" id="productBrowsing">
     <table class="table" style="float:left; text-align:center;">
         <tr>
-            <td colspan="100">Search:&nbsp;&nbsp;<input type="text" name="searchField" style="width:200px;"/>&nbsp;<button type="submit" form="productBrowsing" >Search</button></td>
+            <td colspan="100">Search:&nbsp;&nbsp;<input type="text" name="searchField" style="width:200px;"/>&nbsp;<button type="submit" name="browsingSearch" form="productBrowsing" >Search</button></td>
         </tr>
         <tr>
-            <td>Current Category <%= request.getSession.getAttribute("currentCategory") %>  </td>
+            <td>Current Category <%= request.getAttribute("currentCategory") %>  </td>
         </tr>
         <!--Suppose ${list} points to a List<Object>, then the following-->
         <tr>
@@ -70,8 +68,8 @@
         </tr>
         <c:forEach items="${productList}" var="product">
             <tr>
-                <td>>SKU:&nbsp;${product['sku']}>Name:&nbsp;${product['name']}Price:&nbsp;${product['price']}&nbsp;Quantity:&nbsp; 
-                    <a href = "/Servlet?func=ProductOrder?productID=${product['id']}" >Order Product</a>
+                <td>>SKU:&nbsp;${product['sku']}>Name:&nbsp;${product['name']}Price:&nbsp;${product['price']}&nbsp;Quantity:&nbsp;
+                    <button type="submit" value="${product['id']}" name="ProductBuy">Order Product</button>
                 </td>
             </tr>
         </c:forEach>

@@ -403,7 +403,7 @@ public class Servlet extends HttpServlet {
                 } else {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n");
                 }
-                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
+                out.println(       "    <input type=\"submit\" name=\"func\" value=\"ProductsBrowsing\"/><br/>\n" +
                         "</form>\n" +
                         "</div>\n" +
                         "\n" +
@@ -482,7 +482,7 @@ public class Servlet extends HttpServlet {
                 } else {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n");
                 }
-                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
+                out.println(       "    <input type=\"submit\" name=\"func\" value=\"ProductsBrowsing\"/><br/>\n" +
                         "</form>\n" +
                         "</div>\n" +
                         "\n" +
@@ -557,107 +557,78 @@ public class Servlet extends HttpServlet {
                 RequestDispatcher dispatcher = request.getRequestDispatcher("Products.jsp");
                 dispatcher.forward(request, response);
                 break;
-            case "Products Browsing":
-                out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
-                        "<head>\n" +
-                        "    <style>\n" +
-                        "        .center {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "        .left {\n" +
-                        "            text-align: left;\n" +
-                        "            width: 200px;\n" +
-                        "            padding: 0px;\n" +
-                        "            top: 10px;\n" +
-                        "            border: 3px solid #660000;\n" +
-                        "        }\n" +
-                        "        .frame {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            position: absolute;\n" +
-                        "            padding: 10px;\n" +
-                        "            left: 210px;\n" +
-                        "            right: 10px;\n" +
-                        "            top: 10px;\n" +
-                        "            bottom: 10px;\n" +
-                        "            border: 3px solid #009900;\n" +
-                        "        }\n" +
-                        "    </style>\n" +
-                        "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Browsing</title>\n" +
-                        "</head>\n" +
-                        "<body>\n" +
-                        "<div class=\"frame\">\n");
-                out.println("<h1>Browsing</h1>");
-                out.println(       "</div>\n" +
-                        "<div class=\"left\">\n" +
-                        "<form action=\"/Servlet\" method=\"post\">\n");
-                if (request.getSession().getAttribute("Role").equals("Owner")) {
-                    out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
-                            "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
-                } else {
-                    out.println("    <input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n");
+            case "ProductsBrowsing":
+                if (request.getParameter("ProductBuy") != null) {
+                    List<String> cart;
+                    try {
+                        cart = (List<String>) request.getSession().getAttribute("shoppingCart");
+                        cart.add(request.getParameter("ProductBuy"));
+                        request.getSession().setAttribute("shoppingCart", cart);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        cart = new ArrayList<>();
+                        cart.add(request.getParameter("ProductBuy"));
+                        request.getSession().setAttribute("shoppingCart", cart);
+                    }
+                    dispatcher = request.getRequestDispatcher("ProductOrder.jsp");
+                    dispatcher.forward(request, response);
                 }
-                        out.println("    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
-                        "</form>\n" +
-                        "</div>\n" +
-                        "\n" +
-                        "</body>\n" +
-                        "</html>");
+
+                category =(request.getParameter("Category"));
+                if (category == null) {
+                    try {
+                        category = request.getSession().getAttribute("currentCategoryID").toString();
+                        if (category == null) {
+                            category = "-1";
+                        }
+                    } catch (Exception e) {
+                        category = "-1";
+                    }
+                } else {
+                    request.getSession().setAttribute("browsingSearchField", "");
+                }
+
+                searchCriteria = request.getParameter("searchField");
+                if (searchCriteria == null) {
+                    try {
+                        searchCriteria = request.getSession().getAttribute("browsingSearchField").toString();
+                    } catch (Exception e) {
+                        searchCriteria = "";
+                    }
+                } else {
+                    request.getSession().setAttribute("browsingSearchField", searchCriteria);
+                }
+
+                request.setAttribute("categoriesList", categoryList(category));
+                try {
+                    ResultSet categories = selectCategoryForID(category);
+                    if (categories != null && categories.next()) {
+                        request.setAttribute("currentCategory", categories.getString("Name"));
+                        request.getSession().setAttribute("currentCategoryID", categories.getString("CategoryID"));
+                    } else {
+                        request.setAttribute("currentCategory", "All Products");
+                        request.getSession().setAttribute("currentCategoryID", "-1");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    request.setAttribute("currentCategory", "All Products");
+                    request.getSession().setAttribute("currentCategoryID", "-1");
+                }
+
+                try {
+                    request.setAttribute("productList", productSelect(Integer.valueOf(request.getSession().getAttribute("currentCategoryID").toString()),
+                            Integer.valueOf(request.getSession().getAttribute("AccountID").toString()), searchCriteria));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    request.setAttribute("productList", productSelect(Integer.valueOf(request.getParameter("Category")),
+                            Integer.valueOf(request.getSession().getAttribute("AccountID").toString()), searchCriteria));
+                }
+                dispatcher = request.getRequestDispatcher("ProductsBrowsing.jsp");
+                dispatcher.forward(request, response);
                 break;
             case "Product Order":
-                out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
-                        "<head>\n" +
-                        "    <style>\n" +
-                        "        .center {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "        .left {\n" +
-                        "            text-align: left;\n" +
-                        "            width: 200px;\n" +
-                        "            padding: 0px;\n" +
-                        "            top: 10px;\n" +
-                        "            border: 3px solid #660000;\n" +
-                        "        }\n" +
-                        "        .frame {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            position: absolute;\n" +
-                        "            padding: 10px;\n" +
-                        "            left: 210px;\n" +
-                        "            right: 10px;\n" +
-                        "            top: 10px;\n" +
-                        "            bottom: 10px;\n" +
-                        "            border: 3px solid #009900;\n" +
-                        "        }\n" +
-                        "    </style>\n" +
-                        "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Order</title>\n" +
-                        "</head>\n" +
-                        "<body>\n" +
-                        "<div class=\"frame\">\n");
-                out.println("<h1>Order</h1>");
-                out.println(       "</div>\n" +
-                        "<div class=\"left\">\n" +
-                        "<form action=\"/Servlet\" method=\"post\">\n");
-                if (request.getSession().getAttribute("Role").equals("Owner")) {
-                    out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
-                            "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
-                } else {
-                    out.println("    <input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n");
-                }
-                out.println(       "    <input type=\"submit\" name=\"func\" value=\"Products Browsing\"/><br/>\n" +
-                        "</form>\n" +
-                        "</div>\n" +
-                        "\n" +
-                        "</body>\n" +
-                        "</html>");
+                dispatcher = request.getRequestDispatcher("ProductOrder.jsp");
+                dispatcher.forward(request, response);
                 break;
             case "Checkout":
                 out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
