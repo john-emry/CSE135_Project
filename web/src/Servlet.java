@@ -226,37 +226,37 @@ public class Servlet extends HttpServlet {
         }
     }
 
-    private void insertOrderHistory(int price, int AccountID, Date date, int[] productIDs, int[] quantity) {
+    private void insertOrderHistory(int price, int AccountID, Date date, int[] productIDs, int[] prices, int[] quantity) {
         String query = "INSERT INTO public.order_history(\"TotalPrice\", \"Date\", \"AccountID\")\n" +
-                "select ?, ?, ?;\n";
+                "select ?, ?, ?;";
         PreparedStatement requestQuery;
+        System.out.println(Arrays.toString(productIDs));
+        System.out.println(Arrays.toString(prices));
+        System.out.println(Arrays.toString(quantity));
         try {
-            requestQuery = conn.prepareStatement(query);
+            int orderHistoryID = -1;
+            requestQuery = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             requestQuery.setInt(1, price);
             requestQuery.setDate(2, new java.sql.Date(date.getTime()));
             requestQuery.setInt(3, AccountID);
             requestQuery.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        query = "SELECT \"OrderHistoryID\" FROM public.order_history WHERE \"Date\"=? AND \"AccountID\"=?";
-        try {
-            requestQuery = conn.prepareStatement(query);
-            requestQuery.setDate(1, new java.sql.Date(date.getTime()));
-            requestQuery.setInt(2, AccountID);
-            rset = requestQuery.executeQuery();
-            int orderHistoryID = -1;
+
+            rset = requestQuery.getGeneratedKeys();
+
+            query = "INSERT INTO public.order_history_products(\"ProductID\", \"OrderHistoryID\", \"Quantity\", \"Price\")\n" +
+                    "select ?, ?, ?, ?;";
+
             if (rset.next()) {
-                orderHistoryID = rset.getInt("OrderHistoryProductsID");
+                orderHistoryID = rset.getInt("OrderHistoryID");
             }
             if (orderHistoryID != -1) {
-                query = "INSERT INTO public.order_history_products(\"ProductID\", \"OrderHistoryID\", \"Quantity\")\n" +
-                        "select ?, ?, ?;";
                 for (int i = 0; i < productIDs.length; i++) {
                     requestQuery = conn.prepareStatement(query);
                     requestQuery.setInt(1, productIDs[i]);
                     requestQuery.setInt(2, orderHistoryID);
                     requestQuery.setInt(3, quantity[i]);
+                    requestQuery.setInt(4, prices[i]);
+                    requestQuery.executeUpdate();
                 }
             } else {
                 throw new Exception("no orders found");
@@ -772,10 +772,25 @@ public class Servlet extends HttpServlet {
                 try {
                     List<Map<String, String>> cart = (List<Map<String, String>>) tempCart;
                     request.setAttribute("shoppingCart", cart);
+                    int[] prices = new int[cart.size()];
+                    int[] quantities = new int[cart.size()];
+                    int[] productIDs = new int[cart.size()];
+                    int totalPrice = 0;
+                    for (int i = 0; i < cart.size(); i++) {
+                        Map<String, String> m = cart.get(i);
+                        totalPrice += Integer.valueOf(m.get("price")) * Integer.valueOf(m.get("quantity"));
+                        prices[i] = (Integer.valueOf(m.get("price")));
+                        quantities[i] = (Integer.valueOf(m.get("quantity")));
+                        productIDs[i] = (Integer.valueOf(m.get("productID")));
+                    }
+                    insertOrderHistory(totalPrice, (int) request.getSession().getAttribute("AccountID"), new Date(),
+                            productIDs, prices, quantities);
+                    request.getSession().removeAttribute("shoppingCart");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                insertOrderHistory();
+                dispatcher = request.getRequestDispatcher("Confirmation.jsp");
+                dispatcher.forward(request, response);
                 break;
             default:
                 break;
