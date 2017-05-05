@@ -70,7 +70,7 @@
         </tr>
         <c:forEach items="${productList}" var="product">
             <tr>
-                <td>>SKU:&nbsp;${product['sku']}>Name:&nbsp;${product['name']}Price:&nbsp;${product['price']}&nbsp;<input style="width:20px;" name="ProductQuantity" type="number" id="ProductQuantity"/> 
+                <td>>SKU:&nbsp;${product['sku']}>Name:&nbsp;${product['name']}Price:&nbsp;${product['price']}&nbsp;Quantity:&nbsp;<input style="width:20px;" name="ProductQuantity" type="number" id="ProductQuantity"/> 
                     <button type="submit" value="${product.['productID']}" name="AddToCart" form="productBrowsing" id="AddToCart">Add to cart</button>
                 </td>
             </tr>
