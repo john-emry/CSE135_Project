@@ -6,6 +6,7 @@ import java.sql.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.Date;
 import javax.servlet.*;
 import javax.servlet.http.*;
 
@@ -23,6 +24,7 @@ public class Servlet extends HttpServlet {
             conn = DriverManager.getConnection(dbURL);
             System.out.println("Connected to CSE135");
         } catch (Exception e) {
+            e.printStackTrace();
             error = e.toString();
         }
     }
@@ -38,6 +40,7 @@ public class Servlet extends HttpServlet {
             rset = requestQuery.executeQuery();
             return rset;
         } catch (Exception e) {
+            e.printStackTrace();
             return rset;
         }
     }
@@ -51,7 +54,7 @@ public class Servlet extends HttpServlet {
                 requestQuery = conn.prepareStatement(query);
                 rset = requestQuery.executeQuery();
             } catch (Exception e) {
-
+                e.printStackTrace();
             }
         } else {
             String query = "Select * from Categories where not \"CategoryID\"=?";
@@ -60,14 +63,10 @@ public class Servlet extends HttpServlet {
                 requestQuery.setInt(1, Integer.valueOf(notChoose));
                 rset = requestQuery.executeQuery();
             } catch (Exception e) {
-
+                e.printStackTrace();
             }
         }
-
-
         try {
-
-
             while (rset.next()) {
                 HashMap<String, String> category = new HashMap<String, String>();
                 category.put("name", rset.getString("name"));
@@ -224,6 +223,46 @@ public class Servlet extends HttpServlet {
             sb.append("<input type=\"submit\" name=\"categoryFunc\" value=\"Insert\"/>");
             sb.append("</form>");
             return sb.toString();
+        }
+    }
+
+    private void insertOrderHistory(int price, int AccountID, Date date, int[] productIDs, int[] quantity) {
+        String query = "INSERT INTO public.order_history(\"TotalPrice\", \"Date\", \"AccountID\")\n" +
+                "select ?, ?, ?;\n";
+        PreparedStatement requestQuery;
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setInt(1, price);
+            requestQuery.setDate(2, new java.sql.Date(date.getTime()));
+            requestQuery.setInt(3, AccountID);
+            requestQuery.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        query = "SELECT \"OrderHistoryID\" FROM public.order_history WHERE \"Date\"=? AND \"AccountID\"=?";
+        try {
+            requestQuery = conn.prepareStatement(query);
+            requestQuery.setDate(1, new java.sql.Date(date.getTime()));
+            requestQuery.setInt(2, AccountID);
+            rset = requestQuery.executeQuery();
+            int orderHistoryID = -1;
+            if (rset.next()) {
+                orderHistoryID = rset.getInt("OrderHistoryProductsID");
+            }
+            if (orderHistoryID != -1) {
+                query = "INSERT INTO public.order_history_products(\"ProductID\", \"OrderHistoryID\", \"Quantity\")\n" +
+                        "select ?, ?, ?;";
+                for (int i = 0; i < productIDs.length; i++) {
+                    requestQuery = conn.prepareStatement(query);
+                    requestQuery.setInt(1, productIDs[i]);
+                    requestQuery.setInt(2, orderHistoryID);
+                    requestQuery.setInt(3, quantity[i]);
+                }
+            } else {
+                throw new Exception("no orders found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -705,54 +744,31 @@ public class Servlet extends HttpServlet {
                 dispatcher.forward(request, response);
                 break;
             case "Checkout":
-                out.println("<html lang=\"en\" xmlns=\"http://www.w3.org/1999/html\">\n" +
-                        "<head>\n" +
-                        "    <style>\n" +
-                        "        .center {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            padding: 10px;\n" +
-                        "        }\n" +
-                        "        .left {\n" +
-                        "            text-align: left;\n" +
-                        "            width: 200px;\n" +
-                        "            padding: 0px;\n" +
-                        "            top: 10px;\n" +
-                        "            border: 3px solid #660000;\n" +
-                        "        }\n" +
-                        "        .frame {\n" +
-                        "            text-align: center;\n" +
-                        "            margin: auto;\n" +
-                        "            position: absolute;\n" +
-                        "            padding: 10px;\n" +
-                        "            left: 210px;\n" +
-                        "            right: 10px;\n" +
-                        "            top: 10px;\n" +
-                        "            bottom: 10px;\n" +
-                        "            border: 3px solid #009900;\n" +
-                        "        }\n" +
-                        "    </style>\n" +
-                        "    <link rel=\"stylesheet\" href=\"css/bootstrap.css\">\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Browsing</title>\n" +
-                        "</head>\n" +
-                        "<body>\n" +
-                        "<div class=\"frame\">\n");
-                out.println("<h1>Browsing</h1>");
-                out.println(       "</div>\n" +
-                        "<div class=\"left\">\n" +
-                        "<form action=\"/Servlet\" method=\"post\">\n");
-                if (request.getSession().getAttribute("Role").equals("Owner")) {
-                    out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
-                            "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
+                try {
+                    tempCart = request.getSession().getAttribute("shoppingCart");
+                    if (tempCart instanceof List) {
+                        List<Map<String, String>> cart = (List<Map<String, String>>) tempCart;
+                        int totalPrice = 0;
+                        for (Map<String, String> m : cart) {
+                            totalPrice += Integer.valueOf(m.get("price")) * Integer.valueOf(m.get("quantity"));
+                        }
+                        request.setAttribute("totalPrice", totalPrice);
+                        request.setAttribute("shoppingCart", cart);
+                    } else {
+                        request.setAttribute("totalPrice", 0);
+                        request.getSession().setAttribute("shoppingCart", new ArrayList<>());
+                        throw new Exception("shoppingCart not found");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    request.setAttribute("totalPrice", 0);
+                    request.getSession().setAttribute("shoppingCart", new ArrayList<>());
                 }
-                out.println("    <input type=\"submit\" name=\"func\" value=\"Product Order\"/><br/>\n" +
-                        "<input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n" +
-                        "</form>\n" +
-                        "</div>\n" +
-                        "\n" +
-                        "</body>\n" +
-                        "</html>");
+                dispatcher = request.getRequestDispatcher("BuyShoppingCart.jsp");
+                dispatcher.forward(request, response);
+                break;
+            case "Confirmation":
+
                 break;
             default:
                 break;
