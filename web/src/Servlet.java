@@ -171,11 +171,12 @@ public class Servlet extends HttpServlet {
             ////PrintStackTrace(e, out);
             return false;
         }
-        String query = "SELECT \"SKU\" FROM public.Products WHERE \"SKU\"=?";
+        String query = "SELECT \"SKU\" FROM public.Products WHERE \"SKU\"=? AND NOT \"ProductID\"=?";
         PreparedStatement requestQuery;
         try {
             requestQuery = conn.prepareStatement(query);
             requestQuery.setString(1, SKU);
+            requestQuery.setInt(2, prodID);
             rset = requestQuery.executeQuery();
             if (rset != null && rset.next()) {
                 return false;
@@ -389,12 +390,12 @@ public class Servlet extends HttpServlet {
         if (name.equals("")) {
             return false;
         }
-        String query = "SELECT * FROM public.Categories WHERE \"Name\" = ?";
+        String query = "SELECT * FROM public.Categories WHERE \"Name\" = ? AND NOT \"CategoryID\"=?";
         PreparedStatement requestQuery;
         try {
-
             requestQuery = conn.prepareStatement(query);
             requestQuery.setString(1, name);
+            requestQuery.setInt(2, catID);
             rset = requestQuery.executeQuery();
             if (rset != null && rset.next()) {
                 return false;

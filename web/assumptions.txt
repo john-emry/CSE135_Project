@@ -1,0 +1,5 @@
+Assumptions:
+
+1. Owners can only delete/update and see categories/products that they have created
+2. Shopping carts are session only and do not persist between sessions.
+3. Product prices do not fluctuate once chosen, they remain the same once they are in the shopping cart.

@@ -36,8 +36,8 @@
             if (request.getSession().getAttribute("Role").equals("Owner")) {
                 out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >  ");
             } else {
-                throw new Exception("Owners Only");
                 out.println("<a href=\"/Servlet?func=Checkout\" class=\"button\">Buy Shopping Cart</a>  ");
+                throw new Exception("Owners Only");
             }
             out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>  ");
         } catch (Exception e) {
