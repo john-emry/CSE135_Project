@@ -29,6 +29,10 @@ public class Servlet extends HttpServlet {
         }
     }
 
+    public void destroy() throws ServletException {
+        conn.close();
+    }
+
     private ResultSet selectCategoryForID(String ID) {
         int intID = Integer.valueOf(ID);
         String query = "Select * from Categories WHERE \"CategoryID\"=?";
@@ -743,6 +747,10 @@ public class Servlet extends HttpServlet {
 
                 String productID = request.getParameter("AddToCart");
                 String quantity = request.getParameter("ProductQuantity");
+                if (Integer.valueOf(quantity) < 1) {
+                    System.err.println("quantity was less than 1")
+                    break;
+                }
                 HashMap<String, String> product = new HashMap<>();
 
                 try {
