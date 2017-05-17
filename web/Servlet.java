@@ -2,13 +2,16 @@
  * Created by John on 4/29/2017.
  */
 
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.*;
-
-import java.io.*;
 import java.util.*;
 import java.util.Date;
-import javax.servlet.*;
-import javax.servlet.http.*;
 
 public class Servlet extends HttpServlet {
     private static Connection conn = null;
@@ -27,10 +30,6 @@ public class Servlet extends HttpServlet {
             e.printStackTrace();
             error = e.toString();
         }
-    }
-
-    public void destroy() throws ServletException {
-        conn.close();
     }
 
     private ResultSet selectCategoryForID(String ID) {
@@ -747,8 +746,17 @@ public class Servlet extends HttpServlet {
 
                 String productID = request.getParameter("AddToCart");
                 String quantity = request.getParameter("ProductQuantity");
-                if (Integer.valueOf(quantity) < 1) {
-                    System.err.println("quantity was less than 1")
+                try {
+                    if (Integer.valueOf(quantity) < 1) {
+                        System.err.println("quantity was less than 1");
+                        dispatcher = request.getRequestDispatcher("/Servlet?func=ProductsBrowsing");
+                        dispatcher.forward(request, response);
+                        break;
+                    }
+                } catch (Exception e) {
+                    System.err.println("quantity was less than 1");
+                    dispatcher = request.getRequestDispatcher("/Servlet?func=ProductsBrowsing");
+                    dispatcher.forward(request, response);
                     break;
                 }
                 HashMap<String, String> product = new HashMap<>();
@@ -897,6 +905,10 @@ public class Servlet extends HttpServlet {
     }
 
     public void destroy() {
-
+        try {
+            conn.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
