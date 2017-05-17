@@ -3,3 +3,10 @@ Assumptions:
 1. Owners can only delete/update and see categories/products that they have created
 2. Shopping carts are session only and do not persist between sessions.
 3. Product prices do not fluctuate once chosen, they remain the same once they are in the shopping cart.
+
+Set up instructions:
+
+Using tomcat, place compiled Servlet into tomcat/webapps/WEB-INF/classes
+Place all jsps in ROOT folder of tomcat/webapps
+
+Name: John Hurst, Partner Name: Kyle Ziegler, Email: jhurst@ucsd.edu
