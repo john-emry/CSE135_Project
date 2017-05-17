@@ -13,4 +13,4 @@ WITH (
 );
 
 ALTER TABLE public.order_history_products
-    OWNER to kyleziegler;
+    OWNER to postgres;
