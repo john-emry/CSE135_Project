@@ -82,18 +82,10 @@
     <form action="/Servlet?func=SalesAnalytics" method="post"  id="salesAnalyticsForm">
     <table class="optionsTable">
         <tr>
-            <td style="width: 100%;">Column settings:</td>
             <td style="width: 100%;">Row settings:</td>
             <td style="width: 100%;">Order settings:</td>
         </tr>
         <tr>
-            <td>
-                <select name="colSelect" id="colSelect">
-                    <option value="customer" default>Customers</option>
-                    <option value="state">States</option>
-                </select>
-
-            </td>
             <td>
                 <select name="rowSelect" id="rowSelect">
                     <option value="customer" default>Customers</option>
@@ -119,7 +111,7 @@
                 <select name="productCategoryFilter" id="productCategoryFilter">
                     <option value="allCategories" default>All Categories</option>
                 <c:forEach items="${categoriesList}" var="cList">
-                    <option value="${cList['categoryName']}">${cList['categoryName']}</option>
+                    <option value="${cList['id']}">${cList['name']}</option>
                 </c:forEach>
                 </select>
             </td>
@@ -141,7 +133,7 @@
     </table>
 
     <%--Buttons down here to submit the form: next buttons over the report--%>
-    <button type="submit" id="next20button">Next 20</button>
+    <button type="submit" id="next20button" form="salesAnalyticsForm">Next 20</button>
 
     </form>
     

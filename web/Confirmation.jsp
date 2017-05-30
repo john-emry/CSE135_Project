@@ -39,6 +39,7 @@
             if (request.getSession().getAttribute("Role").equals("Owner")) {
                 out.println("<a href = \"/Servlet?func=Categories\" class=\"button\" > Categories </a >");
                 out.println("<a href = \"/Servlet?func=Products\" class=\"button\" > Products </a >");
+                out.println("<a href = \"/Servlet?func=SalesAnalytics\" class=\"button\" > Sales Analytics </a >");
             }
             out.println("<a href=\"/Servlet?func=ProductsBrowsing\" class=\"button\">Products Browsing</a>");
         } catch (Exception e) {
