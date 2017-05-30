@@ -69,10 +69,10 @@ public class DataGenerator {
 	
 	static HashMap<Integer, Integer> productPrices = null;
 	
-	public static void createConnection(String host, String port, String sid, String username, String password) {
+	public static void createConnection() {
 		try { 
 			Class.forName("org.postgresql.Driver");
-			con = DriverManager.getConnection("jdbc:postgresql://" + host + ":" + port + "/" + sid, username, password);
+			con = DriverManager.getConnection("jdbc:postgresql:CSE135?user=postgres&password=saving?bay");
 			System.out.println("Connection created successfully!!");
 		}
 		catch(Exception e) {
@@ -314,25 +314,7 @@ public class DataGenerator {
 	public static void main(String[] args) {
 		Scanner s = null;
 		try {
-			s = new Scanner(System.in);
-			
-			System.out.println("DB Connection details");
-			System.out.println("Provide the DB Host : ");
-			String host = s.nextLine();
-			
-			System.out.println("Provide the DB Port : ");
-			String port = s.nextLine();
-			
-			System.out.println("Provide the DB Name : ");
-			String sid = s.nextLine();
-			
-			System.out.println("Provide the Username : ");
-			String username = s.nextLine();
-			
-			System.out.println("Provide the Password : ");
-			String password = s.nextLine();
-			
-			createConnection(host, port, sid, username, password);
+			createConnection();
 			System.out.println("");
 			try{
 				System.out.println("Provide Data Generator Inputs");
