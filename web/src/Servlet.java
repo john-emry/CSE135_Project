@@ -315,6 +315,15 @@ public class Servlet extends HttpServlet {
         }
     }
 
+    private List<Map.Entry<String, List<String>>> getGrid(String rowSelect, String orderSelect, String category) {
+        if (orderSelect.equals("topk")) {
+
+        } else {
+
+        }
+        return new ArrayList<>();
+    }
+
     private Boolean insertProduct(String name, String SKU, String price, int AccountID, Integer catID, PrintWriter out) {
         try {
             if (name.equals("") || SKU.equals("") || price.equals("") || Integer.valueOf(price) < 0 || catID.equals(null))  {
@@ -843,12 +852,6 @@ public class Servlet extends HttpServlet {
             case "SalesAnalytics":
                 String rowSelect = request.getParameter("rowSelect");
                 String orderSelect = request.getParameter("orderSelect");
-                if (rowSelect == null) {
-                    rowSelect = "customer";
-                }
-                if (orderSelect == null) {
-                    orderSelect = "alphabetical";
-                }
                 category =(request.getParameter("productCategoryFilter"));
                 if (category == null) {
                     try {
@@ -862,6 +865,15 @@ public class Servlet extends HttpServlet {
                 } else if (category.equals("allCategories")) {
                     category = "-1";
                 }
+                if (rowSelect == null) {
+                    rowSelect = "customer";
+                }
+                if (orderSelect == null) {
+                    orderSelect = "alphabetical";
+                }
+                List<Map.Entry<String, List<String>>> productList = getGrid(rowSelect, orderSelect, category);
+
+
                 request.setAttribute("categoriesList", categoryList("-1"));
                 dispatcher = request.getRequestDispatcher("SalesAnalytics.jsp");
                 dispatcher.forward(request, response);

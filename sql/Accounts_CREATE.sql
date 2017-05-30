@@ -14,4 +14,4 @@ WITH (
 TABLESPACE pg_default;
 
 ALTER TABLE public.accounts
-    OWNER to kyleziegler;
+    OWNER to postgres;
