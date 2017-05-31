@@ -364,6 +364,8 @@ public class DataGenerator {
 			createConnection();
 			System.out.println("");
 			try{
+				s = new Scanner(System.in);
+				
 				System.out.println("Provide Data Generator Inputs");
 				System.out.println("Provide the number of Customers to be created : ");
 				noOfCustomers = s.nextInt();
