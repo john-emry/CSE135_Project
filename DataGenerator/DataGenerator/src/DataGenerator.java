@@ -98,7 +98,7 @@ public class DataGenerator {
 			"\"Username\", \"Age\", \"State\", \"Role\") VALUES(?,"
 			+ " 25, "
 			+ "?, "
-			+ " User)";
+			+ " \"User\")";
 	private static String INSERT_CATEGORY = "INSERT INTO categories(\"Name\", \"Description\", \"AccountID\") VALUES(?, ?, 1) ";
 	private static String INSERT_PRODUCT = "INSERT INTO products(\"SKU\", \"Name\", \"Price\", \"CategoryID\", \"AccountID\") VALUES(?, ?, ?, ?, 1) ";
 	private static String INSERT_SHOPPING_CART = "INSERT INTO order_history(\"AccountID\", \"TotalPrice\", \"Date\") VALUES(?, ?, ?) ";
