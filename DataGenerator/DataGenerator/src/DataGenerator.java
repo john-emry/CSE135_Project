@@ -303,10 +303,10 @@ public class DataGenerator {
 					product.put(1, noOfRows);
 					productId = rand.nextInt(noOfProducts)+1;
 					product.put(2, productId);
-					productPrice = productPrices.get(productId);
-					product.put(3, productPrice);
 					quantity = rand.nextInt(100)+1;
 					product.put(4, quantity);
+					productPrice = productPrices.get(productId);
+					product.put(3, productPrice*quantity);
 					productsMap.add(product);
 					totalPrice += (Integer) product.get(3) * (Integer) product.get(4);
 
