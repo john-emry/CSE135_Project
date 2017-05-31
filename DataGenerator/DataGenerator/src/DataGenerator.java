@@ -96,9 +96,9 @@ public class DataGenerator {
 	
 	private static String INSERT_CUSTOMER = "INSERT INTO accounts(\n" +
 			"\"Username\", \"Age\", \"State\", \"Role\") VALUES(?,"
-			+ " 25, "
-			+ "?, "
-			+ " \"User\")";
+			+ "25,"
+			+ "?,"
+			+ "?)";
 	private static String INSERT_CATEGORY = "INSERT INTO categories(\"Name\", \"Description\", \"AccountID\") VALUES(?, ?, 1) ";
 	private static String INSERT_PRODUCT = "INSERT INTO products(\"SKU\", \"Name\", \"Price\", \"CategoryID\", \"AccountID\") VALUES(?, ?, ?, ?, 1) ";
 	private static String INSERT_SHOPPING_CART = "INSERT INTO order_history(\"AccountID\", \"TotalPrice\", \"Date\") VALUES(?, ?, ?) ";
@@ -177,6 +177,7 @@ public class DataGenerator {
 				ptst.setString(1, "CUST_"+noOfRows);
 				stateId = rand.nextInt(50);
 				ptst.setString(2, states[stateId]);
+				ptst.setString(3, "User");
 				ptst.addBatch();
 				noOfRows++;
 				
@@ -367,8 +368,9 @@ public class DataGenerator {
 				s = new Scanner(System.in);
 
 				System.out.println("Provide Data Generator Inputs");
-				System.out.println("Provide the number of Customers to be created : ");
+				System.out.println("Provide the number of everything to create : ");
 				noOfCustomers = s.nextInt();
+
 				assertNum(noOfCustomers);
 				
 				System.out.println("Provide the number of Categories to be created : ");
