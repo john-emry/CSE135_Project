@@ -90,7 +90,7 @@ public class DataGenerator {
 	
 	private static String CREATE_PRODUCT_IN_CART = "CREATE TABLE order_history_products( \"OrderHistoryProductsID\" SERIAL PRIMARY KEY, "
 			+ "\"OrderHistoryID\" INTEGER REFERENCES order_history(\"OrderHistoryID\") NOT NULL, "
-			+ "\"ProductID\" INTEGER REFERENCES product(\"ProductID\") NOT NULL, "
+			+ "\"ProductID\" INTEGER REFERENCES products(\"ProductID\") NOT NULL, "
 			+ "\"Price\" TEXT NOT NULL, "
 			+ "\"Quantity\" INTEGER NOT NULL CHECK (\"Quantity\" > 0));";
 	
