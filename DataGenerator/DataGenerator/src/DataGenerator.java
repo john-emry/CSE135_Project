@@ -374,15 +374,15 @@ public class DataGenerator {
 				assertNum(noOfCustomers);
 				
 				System.out.println("Provide the number of Categories to be created : ");
-				noOfCategories = s.nextInt();
+				noOfCategories = noOfCustomers;
 				assertNum(noOfCategories);
 				
 				System.out.println("Provide the number of Products to be created : ");
-				noOfProducts = s.nextInt();
+				noOfProducts = noOfCustomers;
 				assertNum(noOfProducts);
 				
 				System.out.println("Provide the number of Sales to be created : ");
-				noOfSales = s.nextInt();
+				noOfSales = noOfCustomers;
 				assertNum(noOfSales);
 			} catch(Exception e) {
 				System.out.println("Invalid input!!");
