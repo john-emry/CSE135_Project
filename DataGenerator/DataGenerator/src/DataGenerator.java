@@ -175,7 +175,7 @@ public class DataGenerator {
 			ptst = con.prepareStatement(INSERT_CUSTOMER);
 			while(noOfRows < noOfCustomers) {
 				ptst.setString(1, "CUST_"+noOfRows);
-				stateId = rand.nextInt(50)+1;
+				stateId = rand.nextInt(50);
 				ptst.setString(2, states[stateId]);
 				ptst.addBatch();
 				noOfRows++;
