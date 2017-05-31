@@ -1,10 +1,6 @@
-import java.sql.Connection;
-import java.util.HashMap;
-import java.util.Random;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
-import java.util.Scanner;
+import java.sql.*;
+import java.sql.Date;
+import java.util.*;
 
 public class DataGenerator {
 	static int noOfCategories;
@@ -14,54 +10,99 @@ public class DataGenerator {
 	static Connection con = null;
 	static int batchSize = 1000;
 	static Random rand = new Random();
+	static String[] states = {
+			"Alabama",
+			"Alaska",
+			"Arizona",
+			"Arkansas",
+			"California",
+			"Colorado",
+			"Connecticut",
+			"Delaware",
+			"Florida",
+			"Georgia",
+			"Hawaii",
+			"Idaho",
+			"Illinois",
+			"Indiana",
+			"Iowa",
+			"Kansas",
+			"Kentucky",
+			"Louisiana",
+			"Maine",
+			"Maryland",
+			"Massachusetts",
+			"Michigan",
+			"Minnesota",
+			"Mississippi",
+			"Missouri",
+			"Montana",
+			"Nebraska",
+			"Nevada",
+			"New Hampshire",
+			"New Jersey",
+			"New Mexico",
+			"New York",
+			"North Carolina",
+			"North Dakota",
+			"Ohio",
+			"Oklahoma",
+			"Oregon",
+			"Pennsylvania",
+			"Rhode Island",
+			"South Carolina",
+			"South Dakota",
+			"Tennessee",
+			"Texas",
+			"Utah",
+			"Vermont",
+			"Virginia",
+			"Washington",
+			"West Virginia",
+			"Wisconsin",
+			"Wyoming",
+	}
 	
-	private static String DROP_TABLES = "DROP TABLE products_in_cart, shopping_cart, product, category, person";
-	private static String CREATE_PERSON = "CREATE TABLE person ( id SERIAL PRIMARY KEY, "
-			+ "person_name TEXT NOT NULL UNIQUE, "
-			+ "role_id INTEGER REFERENCES role (id) NOT NULL, "
-			+ "state_id INTEGER REFERENCES state (id) NOT NULL, "
-			+ "age INTEGER NOT NULL CHECK(age > 0), "
-			+ "created_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'))";
+	private static String DROP_TABLES = "DROP TABLE accounts, order_history, products, categories, order_history_products";
+	private static String CREATE_PERSON = "CREATE TABLE accounts ( \"AccountID\" SERIAL PRIMARY KEY, "
+			+ "\"Username\" TEXT NOT NULL UNIQUE, "
+			+ "\"Role\" TEXT NOT NULL, "
+			+ "\"State\" TEXT NOT NULL, "
+			+ "\"Age\" INTEGER NOT NULL CHECK(age > 0), "
+			+ "\"SessionToken\" TEXT)";
 	
-	private static String CREATE_CATEGORY = "CREATE TABLE category ( id SERIAL PRIMARY KEY, "
-			+ "category_name TEXT UNIQUE NOT NULL, "
-			+ "description TEXT, "
-			+ "created_by TEXT NOT NULL, "
-			+ "created_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'), "
-			+ "modified_by TEXT, "
-			+ "modified_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'));";
+	private static String CREATE_CATEGORY = "CREATE TABLE categories ( \"CategoryID\" SERIAL PRIMARY KEY, "
+			+ "\"Name\" TEXT UNIQUE NOT NULL, "
+			+ "\"Description\" TEXT, "
+			+ "\"AccountID\" INTEGER NOT NULL);";
 	
-	private static String CREATE_PRODUCT = "CREATE TABLE product( id SERIAL PRIMARY KEY, "
-			+ "sku_id TEXT NOT NULL UNIQUE, "
-			+ "product_name TEXT NOT NULL, "
-			+ "price REAL NOT NULL CHECK(price >= 0.0), "
-			+ "category_id INTEGER REFERENCES category(id) NOT NULL, "
-			+ "created_by TEXT NOT NULL, "
-			+ "created_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'), "
-			+ "modified_by TEXT, "
-			+ "modified_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'));";
+	private static String CREATE_PRODUCT = "CREATE TABLE products ( \"ProductID\" SERIAL PRIMARY KEY, "
+			+ "\"SKU\" TEXT NOT NULL UNIQUE, "
+			+ "\"Name\" TEXT NOT NULL, "
+			+ "\"Price\" TEXT NOT NULL, "
+			+ "\"CategoryID\" INTEGER REFERENCES categories(\"CategoryID\") NOT NULL, "
+			+ "\"AccountID\" INTEGER NOT NULL);";
 	
-	private static String CREATE_SHOPPING_CART = "CREATE TABLE shopping_cart( id SERIAL PRIMARY KEY, "
-			+ "person_id INTEGER REFERENCES person(id) NOT NULL, "
-			+ "is_purchased BOOLEAN NOT NULL, "
-			+ "purchase_info TEXT, "
-			+ "created_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'), "
-			+ "purchased_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'));";
+	private static String CREATE_SHOPPING_CART = "CREATE TABLE order_history( \"OrderHistoryID\" SERIAL PRIMARY KEY, "
+			+ "\"AccountID\" INTEGER REFERENCES Accounts(\"AccountID\") NOT NULL, "
+			+ "\"TotalPrice\" TEXT NOT NULL, "
+			+ "\"Date\" date NOT NULL);";
 	
-	private static String CREATE_PRODUCT_IN_CART = "CREATE TABLE products_in_cart( id SERIAL PRIMARY KEY, "
-			+ "cart_id INTEGER REFERENCES shopping_cart(id) NOT NULL, "
-			+ "product_id INTEGER REFERENCES product(id) NOT NULL, "
-			+ "price REAL NOT NULL CHECK (price >= 0.0), "
-			+ "quantity INTEGER NOT NULL CHECK (quantity > 0));";
+	private static String CREATE_PRODUCT_IN_CART = "CREATE TABLE order_history_products( \"OrderHistoryProductsID\" SERIAL PRIMARY KEY, "
+			+ "\"OrderHistoryID\" INTEGER REFERENCES order_history(\"OrderHistoryID\") NOT NULL, "
+			+ "\"ProductID\" INTEGER REFERENCES product(\"ProductID\") NOT NULL, "
+			+ "\"Price\" TEXT NOT NULL, "
+			+ "\"Quantity\" INTEGER NOT NULL CHECK (quantity > 0));";
 	
-	private static String INSERT_CUSTOMER = "INSERT INTO person(person_name, role_id, state_id, age) VALUES(?,"
-			+ " (SELECT id FROM role WHERE role_name = 'Customer'),"
+	private static String INSERT_CUSTOMER = "INSERT INTO accounts(\n" +
+			"\"Username\", \"Age\", \"State\", \"Role\") VALUES(?,"
+			+ " 25, "
 			+ "?, "
-			+ " 25)";
-	private static String INSERT_CATEGORY = "INSERT INTO category(category_name, description, created_by, modified_by) VALUES(?, ?, 'Data_Generator', 'Data_Generator') ";
-	private static String INSERT_PRODUCT = "INSERT INTO product(sku_id, product_name, price, category_id, created_by, modified_by) VALUES(?, ?, ?, ?, 'Data_Generator', 'Data_Generator') ";
-	private static String INSERT_SHOPPING_CART = "INSERT INTO shopping_cart(person_id, is_purchased, purchase_info) VALUES(?, ?, ?) ";
-	private static String INSERT_PRODUCTS_IN_CART = "INSERT INTO products_in_cart(cart_id, product_id, price, quantity) VALUES(?, ?, ?, ?)";
+			+ " User)";
+	private static String INSERT_CATEGORY = "INSERT INTO categories(\"Name\", \"Description\", \"AccountID\") VALUES(?, ?, 1) ";
+	private static String INSERT_PRODUCT = "INSERT INTO products(\"SKU\", \"Name\", \"Price\", \"CategoryID\", \"AccountID\") VALUES(?, ?, ?, ?, 1) ";
+	private static String INSERT_SHOPPING_CART = "INSERT INTO order_history(\"AccountID\", \"TotalPrice\", \"Date\") VALUES(?, ?, ?) ";
+	private static String INSERT_PRODUCTS_IN_CART = "INSERT INTO order_history_products(\"OrderHistoryID\", \"ProductID\", \"Price\", \"Quantity\") VALUES(?, ?, ?, ?)";
 	
 	int maxCustId = 0;
 	int maxCatId = 0;
@@ -135,7 +176,7 @@ public class DataGenerator {
 			while(noOfRows < noOfCustomers) {
 				ptst.setString(1, "CUST_"+noOfRows);
 				stateId = rand.nextInt(56)+1;
-				ptst.setInt(2, stateId);
+				ptst.setString(2, states[stateId]);
 				ptst.addBatch();
 				noOfRows++;
 				
@@ -208,7 +249,7 @@ public class DataGenerator {
 				ptst.setString(1, "SKU_"+noOfRows);
 				ptst.setString(2, "PROD_"+noOfRows);
 				price = (rand.nextInt(1000)+1)*10;
-				ptst.setInt(3, price);
+				ptst.setString(3, String.valueOf(price));
 				categoryId = rand.nextInt(noOfCategories)+1;
 				ptst.setInt(4, categoryId);
 				
@@ -244,55 +285,61 @@ public class DataGenerator {
 		PreparedStatement ptst = null;
 		batchSize = 10000;
 		try {
-			int noOfRows = 0;
+			int noOfRows = 1;
 			int personId = 0;
-			ptst = con.prepareStatement(INSERT_SHOPPING_CART);
-			while(noOfRows < noOfSales) {
-				personId = rand.nextInt(noOfCustomers)+1;
-				ptst.setInt(1, personId);
-				ptst.setBoolean(2, true);
-				ptst.setString(3, "Data_Generator purchased item");
-				
-				ptst.addBatch();
-				noOfRows++;
-				
-				if(noOfRows % batchSize == 0) {
-					ptst.executeBatch();
-				}
-				
-			}
-			ptst.executeBatch();
-			ptst.close();
-			
-			noOfRows = 1;
 			int totalRows = 0;
 			//products_in_cart(cart_id, product_id, price, quantity)
-			ptst = con.prepareStatement(INSERT_PRODUCTS_IN_CART);
 			while(noOfRows <= noOfSales) {
 				int noOfProductsInCart = rand.nextInt(10)+1;
 				int products = 0;
 				int productId = 1;
 				int quantity = 1;
 				int productPrice = 1;
+				List<HashMap<Integer, Object>> productsMap = new ArrayList<>();
+				int totalPrice = 0;
 				while(products < noOfProductsInCart) {
-					ptst.setInt(1, noOfRows);
+					HashMap<Integer, Object> product = new HashMap<>();
+					product.put(1, noOfRows);
 					productId = rand.nextInt(noOfProducts)+1;
-					ptst.setInt(2, productId);
+					product.put(2, productId);
 					productPrice = productPrices.get(productId);
-					ptst.setInt(3, productPrice);
+					product.put(3, productPrice);
 					quantity = rand.nextInt(100)+1;
-					ptst.setInt(4, quantity);
-					
-					ptst.addBatch();
+					product.put(4, quantity);
+					productsMap.add(product);
+					totalPrice += (Integer) product.get(3) * (Integer) product.get(4);
+
 					products++;
+				}
+				noOfRows++;
+
+				ptst = con.prepareStatement(INSERT_SHOPPING_CART);
+				personId = rand.nextInt(noOfCustomers)+1;
+				ptst.setInt(1, personId);
+				ptst.setString(2, String.valueOf(totalPrice));
+				ptst.setDate(3, new Date(System.currentTimeMillis()));
+
+				ptst.executeUpdate();
+				ptst.close();
+
+				ptst = con.prepareStatement(INSERT_PRODUCTS_IN_CART);
+				for (int i = 0; i < productsMap.size(); i++) {
+					ptst.setInt(1, (Integer) productsMap.get(i).get(1));
+					ptst.setInt(2, (Integer) productsMap.get(i).get(2));
+					ptst.setString(3, String.valueOf(productsMap.get(i).get(3)));
+					ptst.setInt(4, (Integer) productsMap.get(i).get(4));
+
+					ptst.addBatch();
 					totalRows++;
-					
+
 					if(totalRows % batchSize == 0) {
 						ptst.executeBatch();
 					}
 				}
 				ptst.executeBatch();
-				noOfRows++;
+				ptst.close();
+
+
 			}
 			
 			System.out.println(noOfSales + " sales inserted successfully");
