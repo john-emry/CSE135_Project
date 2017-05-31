@@ -92,7 +92,7 @@ public class DataGenerator {
 			+ "\"OrderHistoryID\" INTEGER REFERENCES order_history(\"OrderHistoryID\") NOT NULL, "
 			+ "\"ProductID\" INTEGER REFERENCES product(\"ProductID\") NOT NULL, "
 			+ "\"Price\" TEXT NOT NULL, "
-			+ "\"Quantity\" INTEGER NOT NULL CHECK (quantity > 0));";
+			+ "\"Quantity\" INTEGER NOT NULL CHECK (\"Quantity\" > 0));";
 	
 	private static String INSERT_CUSTOMER = "INSERT INTO accounts(\n" +
 			"\"Username\", \"Age\", \"State\", \"Role\") VALUES(?,"
