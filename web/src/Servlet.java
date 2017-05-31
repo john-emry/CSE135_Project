@@ -19,6 +19,59 @@ public class Servlet extends HttpServlet {
     private static ResultSet rset = null;
     private String error = "";
 
+    private String[] states = {
+            "Alabama",
+            "Alaska",
+            "Arizona",
+            "Arkansas",
+            "California",
+            "Colorado",
+            "Connecticut",
+            "Delaware",
+            "Florida",
+            "Georgia",
+            "Hawaii",
+            "Idaho",
+            "Illinois",
+            "Indiana",
+            "Iowa",
+            "Kansas",
+            "Kentucky",
+            "Louisiana",
+            "Maine",
+            "Maryland",
+            "Massachusetts",
+            "Michigan",
+            "Minnesota",
+            "Mississippi",
+            "Missouri",
+            "Montana",
+            "Nebraska",
+            "Nevada",
+            "New Hampshire",
+            "New Jersey",
+            "New Mexico",
+            "New York",
+            "North Carolina",
+            "North Dakota",
+            "Ohio",
+            "Oklahoma",
+            "Oregon",
+            "Pennsylvania",
+            "Rhode Island",
+            "South Carolina",
+            "South Dakota",
+            "Tennessee",
+            "Texas",
+            "Utah",
+            "Vermont",
+            "Virginia",
+            "Washington",
+            "West Virginia",
+            "Wisconsin",
+            "Wyoming",
+    };
+
     public void init() throws ServletException {
         try {
             Class.forName("org.postgresql.Driver");
@@ -315,13 +368,19 @@ public class Servlet extends HttpServlet {
         }
     }
 
-    private List<Map.Entry<String, List<String>>> getGrid(String rowSelect, String orderSelect, String category) {
+    private List<List<String>> getGrid(String rowSelect, String orderSelect, String category) {
         if (orderSelect.equals("topk")) {
 
         } else {
 
         }
-        return new ArrayList<>();
+        String[] array2 = {"", "orange juice", "milk", "milk", "milk", "milk", "milk", "milk", "milk", "milk", "milk"};
+        String[] array = {"Bobby", "2", "3", "3", "3", "3", "3", "3", "3", "3", "3"};
+        List<List<String>> rValue = new ArrayList<>();
+        rValue.add((List<String>) Arrays.asList(array2));
+        rValue.add((List<String>) Arrays.asList(array));
+        return rValue;
+
     }
 
     private Boolean insertProduct(String name, String SKU, String price, int AccountID, Integer catID, PrintWriter out) {
@@ -871,8 +930,10 @@ public class Servlet extends HttpServlet {
                 if (orderSelect == null) {
                     orderSelect = "alphabetical";
                 }
-                List<Map.Entry<String, List<String>>> productList = getGrid(rowSelect, orderSelect, category);
+                List<List<String>> productList = getGrid(rowSelect, orderSelect, category);
 
+                request.setAttribute("displayTableRows", productList);
+                request.setAttribute("noMoreRows", true);
 
                 request.setAttribute("categoriesList", categoryList("-1"));
                 dispatcher = request.getRequestDispatcher("SalesAnalytics.jsp");

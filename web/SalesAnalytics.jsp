@@ -20,25 +20,27 @@
         table.displayTable, tr.displayTable, td.displayTable {
             border: 1px solid black;
             border-collapse: collapse;
-            min-width: 400px;
-            min-height: 300px;
+            min-width: 30px;
+            min-height: 20px;
         }
 
     </style>
     <script type="text/javascript">
-        var onFirstPage = <%= request.getSession().getAttribute("onFirstPage") %>;
-        var showNextButtons = <%= request.getSession().getAttribute("showNextButtons") %>;
+        var noMoreProducts = <%= request.getAttribute("noMoreProducts") %>;
+        var noMoreRows = <%= request.getAttribute("noMoreRows") %>;
+        var onFirstPage = <%= request.getAttribute("onFirstPage") %>;
 
-        $(document).ready(function(){
-
+        $(document).ready(function() {
             if(onFirstPage == true){
                 //Hide the options table if we are not on the first page
                 $(".optionsTable").hide();
             }            
-            if(showNextButtons == false){
+            if(noMoreProducts == true){
+                $("#next10button").hide();
+            }
+            if (noMoreRows == true) {
                 $("#next20button").hide();
             }
-
             //Bold first col of the display table
             $("#displayTable").find("td:first-child").css("font-weight", "bold");
             //Bold the first row (col headers)
@@ -83,8 +85,8 @@
     <form action="/Servlet?func=SalesAnalytics" method="post"  id="salesAnalyticsForm">
     <table class="optionsTable">
         <tr>
-            <td style="width: 100%;">Row settings:</td>
-            <td style="width: 100%;">Order settings:</td>
+            <td style="width: 200px;">Row settings:</td>
+            <td style="width: 200px;">Order settings:</td>
         </tr>
         <tr>
             <td>
@@ -102,10 +104,10 @@
             
         </tr>
         <tr>
-            <td style="width: 100%;" colspan="3">Sales Filtering</td>
+            <td style="width: 200px;" colspan="3">Sales Filtering</td>
         </tr>
         <tr>
-            <td style="width: 100%;">Product Category Filter</td>
+            <td style="width: 200px;">Product Category Filter</td>
         </tr>
         <tr>
             <td>
@@ -121,20 +123,26 @@
 
     <br/>
     <button type="submit" name="updateViewSettings" form="salesAnalyticsForm" >Run Query</button>
-    <br/>    
+    <br/>
+        <br/>
 
     <table class="displayTable" id="displayTable">
         <c:forEach items="${displayTableRows}" var="displayTable">
-            <tr> class="displayTable"
-                <c:forEach items="${displayTableColumns}" var="displayTableColumns">
-                    <td class="displayTable">${displayTableColumns['colVal']}</td>
+            <tr class="displayTable">
+                <c:forEach items="${displayTable}" var="columnVal">
+                    <td class="displayTable">${columnVal}</td>
                 </c:forEach>
             </tr>
         </c:forEach>
     </table>
+        <br/>
+        <br/>
 
     <%--Buttons down here to submit the form: next buttons over the report--%>
-    <button type="submit" id="next20button" form="salesAnalyticsForm">Next 20</button>
+    <button type="submit" id="next20button" form="salesAnalyticsForm">Next 20 <%= request.getAttribute("custOrState") %></button>
+        <br/>
+        <br/>
+        <button type="submit" id="next10button" form="salesAnalyticsForm">Next 10 Products</button>
 
     </form>
     
