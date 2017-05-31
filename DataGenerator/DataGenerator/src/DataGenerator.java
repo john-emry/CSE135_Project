@@ -61,7 +61,7 @@ public class DataGenerator {
 			"West Virginia",
 			"Wisconsin",
 			"Wyoming",
-	}
+	};
 	
 	private static String DROP_TABLES = "DROP TABLE accounts, order_history, products, categories, order_history_products";
 	private static String CREATE_PERSON = "CREATE TABLE accounts ( \"AccountID\" SERIAL PRIMARY KEY, "
