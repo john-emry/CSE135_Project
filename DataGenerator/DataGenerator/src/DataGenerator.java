@@ -68,7 +68,7 @@ public class DataGenerator {
 			+ "\"Username\" TEXT NOT NULL UNIQUE, "
 			+ "\"Role\" TEXT NOT NULL, "
 			+ "\"State\" TEXT NOT NULL, "
-			+ "\"Age\" INTEGER NOT NULL CHECK(age > 0), "
+			+ "\"Age\" INTEGER NOT NULL CHECK(\"Age\" > 0), "
 			+ "\"SessionToken\" TEXT)";
 	
 	private static String CREATE_CATEGORY = "CREATE TABLE categories ( \"CategoryID\" SERIAL PRIMARY KEY, "
