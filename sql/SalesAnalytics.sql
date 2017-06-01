@@ -1,20 +1,42 @@
---order history, asociated to products and price for that product
-SELECT p.ProductID, p.Price 
-from order_history_products
 
---Users who
-SELECT a.AccountID
-FROM accounts a 
-Inner Join order_history o
-    on a.AccountID = o.AccountID
+--Total products 
+Select count (*) from products
 
+--Headers, Alphabetical, init
+Select p."Name", p."ProductID"
+from products p
+Group by  p."Name", p."ProductID"
+Order by p."Name" asc
+Limit 10;
 
+--Headers, Alphabetical, next 10
+Select p."Name", p."ProductID"
+from products p
+Where p."ProductID" > ?
+AND p."ProductID" < ?
+Order by "Name" Asc
+Limit 10;
 
-Where in (Select AccountID from accounts a)
+--State rows, Alphabetical, init
+SELECT a."Username", a."AccountID", ohp."Price"
+FROM products p, order_history_products ohp, accounts a, order_history oh
+WHERE a."AccountID" = oh."AccountID"
+AND
+ohp."OrderHistoryID" = oh."OrderHistoryID"
+AND
+ohp."ProductID" = p."ProductID"
+Group by a."State", a."AccountID", ohp."Price"
+Order by "State" asc
+LIMIT 20;
 
-
-
-Select p.Name from Products p
-order by p.ProductID asc
-
-
+--State rows, Alphabetical, init
+SELECT a."State", a."AccountID", ohp."Price"
+FROM products p, order_history_products ohp, accounts a, order_history oh
+WHERE a."AccountID" = oh."AccountID"
+AND
+ohp."OrderHistoryID" = oh."OrderHistoryID"
+AND
+ohp."ProductID" = p."ProductID"
+Group by a."State", a."AccountID", ohp."Price"
+Order by "State" asc
+LIMIT 20;
