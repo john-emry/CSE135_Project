@@ -372,11 +372,32 @@ public class Servlet extends HttpServlet {
         if (orderSelect.equals("topk")) {
 
         } else {
-
+            String query = "SELECT  *\n" +
+                    "FROM (SELECT ROW_NUMBER() OVER (PARTITION BY a.\"State\" ORDER BY p.\"Name\") as r, a.\"State\", p.\"ProductID\", ohp.\"Price\"\n" +
+                    "FROM products p, order_history_products ohp, accounts a, order_history oh\n" +
+                    "WHERE a.\"AccountID\" = oh.\"AccountID\"\n" +
+                    "AND\n" +
+                    "ohp.\"OrderHistoryID\" = oh.\"OrderHistoryID\"\n" +
+                    "AND\n" +
+                    "ohp.\"ProductID\" = p.\"ProductID\"\n" +
+                    "Group by a.\"State\", p.\"ProductID\", ohp.\"Price\"\n" +
+                    "Order by \"State\" asc, p.\"Name\"\n" +
+                    ") x\n" +
+                    "WHERE x.r <= 10";
+            PreparedStatement requestQuery;
+            try {
+                requestQuery = conn.prepareStatement(query);
+                rset = requestQuery.executeQuery();
+                String state = "";
+                List<List<String>> rValue = new ArrayList<>();
+                while (rset.next()) {
+                    rValue.add()
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return new ArrayList<>();
+            }
         }
-        String[] array2 = {"", "orange juice", "milk", "milk", "milk", "milk", "milk", "milk", "milk", "milk", "milk"};
-        String[] array = {"Bobby", "2", "3", "3", "3", "3", "3", "3", "3", "3", "3"};
-        List<List<String>> rValue = new ArrayList<>();
         rValue.add((List<String>) Arrays.asList(array2));
         rValue.add((List<String>) Arrays.asList(array));
         return rValue;
