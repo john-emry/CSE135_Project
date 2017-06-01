@@ -17,7 +17,7 @@ AND p."ProductID" < ?
 Order by "Name" Asc
 Limit 10;
 
---Customer rows, Alphabetical, init
+--State rows, Alphabetical, init
 SELECT a."Username", a."AccountID", ohp."Price"
 FROM products p, order_history_products ohp, accounts a, order_history oh
 WHERE a."AccountID" = oh."AccountID"
@@ -32,10 +32,11 @@ LIMIT 20;
 --State rows, Alphabetical, init
 SELECT a."State", a."AccountID", ohp."Price"
 FROM products p, order_history_products ohp, accounts a, order_history oh
-Left outer join p."ProductID" on ohp."ProductID"
 WHERE a."AccountID" = oh."AccountID"
 AND
 ohp."OrderHistoryID" = oh."OrderHistoryID"
+AND
+ohp."ProductID" = p."ProductID"
 Group by a."State", a."AccountID", ohp."Price"
 Order by "State" asc
 LIMIT 20;
