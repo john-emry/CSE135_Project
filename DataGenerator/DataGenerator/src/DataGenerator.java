@@ -368,21 +368,21 @@ public class DataGenerator {
 				s = new Scanner(System.in);
 
 				System.out.println("Provide Data Generator Inputs");
-				System.out.println("Provide the number of everything to create : ");
+				System.out.println("Provide the number of Customers to create : ");
 				noOfCustomers = s.nextInt();
 
 				assertNum(noOfCustomers);
 				
 				System.out.println("Provide the number of Categories to be created : ");
-				noOfCategories = noOfCustomers;
+				noOfCategories = s.nextInt();
 				assertNum(noOfCategories);
 				
 				System.out.println("Provide the number of Products to be created : ");
-				noOfProducts = noOfCustomers;
+				noOfProducts = s.nextInt();
 				assertNum(noOfProducts);
 				
 				System.out.println("Provide the number of Sales to be created : ");
-				noOfSales = noOfCustomers;
+				noOfSales = s.nextInt();
 				assertNum(noOfSales);
 			} catch(Exception e) {
 				System.out.println("Invalid input!!");
