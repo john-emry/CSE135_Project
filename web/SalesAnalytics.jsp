@@ -33,7 +33,7 @@
         $(document).ready(function() {
             if(onFirstPage == true){
                 //Hide the options table if we are not on the first page
-                $(".optionsTable").hide();
+                $("#optionsTable").hide();
             }            
             if(noMoreProducts == true){
                 $("#next10button").hide();
@@ -83,7 +83,7 @@
 
   
     <form action="/Servlet?func=SalesAnalytics" method="post"  id="salesAnalyticsForm">
-    <table class="optionsTable">
+    <table class="optionsTable" id="optionsTable">
         <tr>
             <td style="width: 200px;">Row settings:</td>
             <td style="width: 200px;">Order settings:</td>
@@ -114,13 +114,19 @@
                 <select name="productCategoryFilter" id="productCategoryFilter">
                     <option value="allCategories" default>All Categories</option>
                 <c:forEach items="${categoriesList}" var="cList">
-                    <option value="${cList['id']}">${cList['name']}</option>
+                    <option value="${cList['name']}">${cList['name']}</option>
                 </c:forEach>
                 </select>
             </td>
         </tr>
     </table>
-
+    <table class="optionsTable">
+        <tr>
+            <td style="width: 200px;">Row Type: <%= request.getSession().getAttribute("row")%></td>
+            <td style="width: 200px;">Order Type: <%= request.getSession().getAttribute("order")%></td>
+            <td style="width: 400px;">Category Filter: <%= request.getSession().getAttribute("category")%></td>
+        </tr>
+    </table>
     <br/>
     <button type="submit" name="updateViewSettings" form="salesAnalyticsForm" >Run Query</button>
     <br/>
@@ -139,10 +145,10 @@
         <br/>
 
     <%--Buttons down here to submit the form: next buttons over the report--%>
-    <button type="submit" id="next20button" form="salesAnalyticsForm">Next 20 <%= request.getAttribute("custOrState") %></button>
+    <button type="submit" name="next20button" value="clicked" form="salesAnalyticsForm">Next 20 <%= request.getAttribute("custOrState") %></button>
         <br/>
         <br/>
-        <button type="submit" id="next10button" form="salesAnalyticsForm">Next 10 Products</button>
+        <button type="submit" name="next10button" value="clicked" form="salesAnalyticsForm">Next 10 Products</button>
 
     </form>
     

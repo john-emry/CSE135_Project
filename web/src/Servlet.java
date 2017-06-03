@@ -76,7 +76,7 @@ public class Servlet extends HttpServlet {
         try {
             Class.forName("org.postgresql.Driver");
             DriverManager.registerDriver(new org.postgresql.Driver());
-            String dbURL = "jdbc:postgresql:CSE135?user=postgres&password=saving?bay";
+            String dbURL = "jdbc:postgresql:CSE135?user=snap&password=";
             conn = DriverManager.getConnection(dbURL);
             System.out.println("Connected to CSE135");
         } catch (Exception e) {
@@ -368,38 +368,147 @@ public class Servlet extends HttpServlet {
         }
     }
 
-    private List<List<String>> getGrid(String rowSelect, String orderSelect, String category) {
-        if (orderSelect.equals("topk")) {
+    private final String CAT_FILTER_YES =
+            "FROM products p, categories c\n" +
+            "WHERE p.\"CategoryID\" = c.\"CategoryID\"\n" +
+            "AND c.\"Name\" = ?";
 
+    private final String CAT_FILTER_NO =
+            "FROM products p";
+
+    private final String TOP_K = "ORDER BY totalprice desc, header, productprice desc, producttable.\"Name\"";
+
+    private final String ALPHABETICAL = "ORDER BY header, totalprice desc, producttable.\"Name\", productprice desc";
+
+    private List<List<String>> getGrid(boolean state, boolean topk, String category, int columnOffset, int rowOffset) {
+        String catFilter = "";
+        String query = "";
+        String orderBy = "";
+        if (category.equals("")) {
+            catFilter = CAT_FILTER_NO;
         } else {
-            String query = "SELECT  *\n" +
-                    "FROM (SELECT ROW_NUMBER() OVER (PARTITION BY a.\"State\" ORDER BY p.\"Name\") as r, a.\"State\", p.\"ProductID\", ohp.\"Price\"\n" +
-                    "FROM products p, order_history_products ohp, accounts a, order_history oh\n" +
-                    "WHERE a.\"AccountID\" = oh.\"AccountID\"\n" +
-                    "AND\n" +
-                    "ohp.\"OrderHistoryID\" = oh.\"OrderHistoryID\"\n" +
-                    "AND\n" +
-                    "ohp.\"ProductID\" = p.\"ProductID\"\n" +
-                    "Group by a.\"State\", p.\"ProductID\", ohp.\"Price\"\n" +
-                    "Order by \"State\" asc, p.\"Name\"\n" +
-                    ") x\n" +
-                    "WHERE x.r <= 10";
-            PreparedStatement requestQuery;
+            catFilter = CAT_FILTER_YES;
+        }
+        if (topk) {
+            orderBy = TOP_K;
+        } else {
+            orderBy = ALPHABETICAL;
+        }
+        PreparedStatement requestQuery;
+        List<List<String>> rValue = new ArrayList<>();
+        boolean firstTime = true;
+        System.out.println("CATEGORY: " + category);
+        if (state) {
+            query = "DROP VIEW if exists someview";
             try {
-                requestQuery = conn.prepareStatement(query);
-                rset = requestQuery.executeQuery();
-                String state = "";
-                List<List<String>> rValue = new ArrayList<>();
-                while (rset.next()) {
-                    rValue.add()
-                }
+                conn.prepareStatement(query).executeUpdate();
             } catch (Exception e) {
                 e.printStackTrace();
-                return new ArrayList<>();
             }
+            String cat_filter = "";
+            if (category.equals("")) {
+                cat_filter = "FROM products p";
+            } else {
+                cat_filter = "FROM products p, categories c\n" +
+                        "WHERE p.\"CategoryID\" = c.\"CategoryID\"\n" +
+                        "AND c.\"Name\" = " + category;
+            }
+            query = "CREATE VIEW someview as\n" +
+                    "SELECT * FROM (SELECT a.name as \"State\", a.\"AccountID\", coalesce(SUM(CAST(oh.\"TotalPrice\" as bigint)), 0) as TotalPrice\n" +
+                    "FROM (SELECT a.\"Username\", s.name, a.\"AccountID\" FROM (SELECT * FROM states s ORDER BY name LIMIT 20 OFFSET " + rowOffset + ") s LEFT OUTER JOIN accounts a on s.name = a.\"State\") a \n" +
+                    "LEFT OUTER JOIN order_history oh \n" +
+                    "ON a.\"AccountID\" = oh.\"AccountID\"\n" +
+                    "GROUP BY a.name, a.\"AccountID\"\n" +
+                    "ORDER BY a.name) a CROSS JOIN (\n" +
+                    "SELECT \"ProductID\", p.\"Name\"\n" +
+                    cat_filter +
+                    "\nORDER BY p.\"Name\"\n" +
+                    "LIMIT 10 OFFSET " + columnOffset + ") products;" +
+                    "ALTER VIEW someview\n" +
+                    "OWNER to postgres;";
+            try {
+                Statement st = conn.createStatement();
+                st.execute(query);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            query = "SELECT producttable.\"State\" as header, producttable.\"Name\", producttable.\"ProductID\", coalesce(SUM(orders.\"Price\"), 0) as productprice, producttable.totalprice as totalprice\n" +
+                    "FROM (SELECT totals.totalprice, someview.\"State\", someview.\"AccountID\", someview.\"ProductID\", someview.\"Name\"\n" +
+                    "FROM (SELECT \"State\", Sum(TotalPrice) totalprice FROM someview\n" +
+                    "GROUP BY \"State\") totals LEFT OUTER JOIN someview on totals.\"State\" = someview.\"State\") producttable\n" +
+                    "LEFT OUTER JOIN (SELECT oh.\"AccountID\", ohp.\"ProductID\", CAST(ohp.\"Price\" as bigint)\n" +
+                    "FROM order_history_products ohp, order_history oh\n" +
+                    "WHERE ohp.\"OrderHistoryID\" = oh.\"OrderHistoryID\"\n" +
+                    ") orders\n" +
+                    "ON orders.\"ProductID\" = producttable.\"ProductID\"\n" +
+                    "AND orders.\"AccountID\" = producttable.\"AccountID\"\n" +
+                    "GROUP BY producttable.\"State\", producttable.\"Name\", producttable.\"ProductID\", producttable.totalprice\n" +
+                    orderBy;
+        } else {
+            query = "SELECT producttable.\"Username\" as header, producttable.\"Name\", producttable.\"ProductID\", coalesce(SUM(orders.\"Price\"), 0) as productprice, producttable.totalprice as totalprice\n" +
+                    "FROM (Select * FROM (\n" +
+                    "SELECT a.\"Username\", a.\"AccountID\", coalesce(SUM(CAST(oh.\"TotalPrice\" as bigint)), 0) as TotalPrice\n" +
+                    "FROM accounts a \n" +
+                    "LEFT OUTER JOIN order_history oh \n" +
+                    "ON a.\"AccountID\" = oh.\"AccountID\"\n" +
+                    "GROUP BY a.\"Username\", a.\"AccountID\"\n" +
+                    "ORDER BY a.\"Username\"\n" +
+                    "LIMIT 20 OFFSET ?) a CROSS JOIN (\n" +
+                    "SELECT \"ProductID\", p.\"Name\"\n" +
+                    catFilter +
+                    "\nORDER BY p.\"Name\"\n" +
+                    "LIMIT 10 OFFSET ?) product) producttable\n" +
+                    "LEFT OUTER JOIN (SELECT oh.\"AccountID\", ohp.\"ProductID\", CAST(ohp.\"Price\" as bigint)\n" +
+                    "FROM order_history_products ohp, order_history oh\n" +
+                    "WHERE ohp.\"OrderHistoryID\" = oh.\"OrderHistoryID\"\n" +
+                    ") orders\n" +
+                    "ON orders.\"ProductID\" = producttable.\"ProductID\"\n" +
+                    "AND orders.\"AccountID\" = producttable.\"AccountID\"\n" +
+                    "GROUP BY producttable.\"Username\", producttable.totalprice, producttable.\"Name\", producttable.\"ProductID\"\n" +
+                    orderBy;
         }
-        rValue.add((List<String>) Arrays.asList(array2));
-        rValue.add((List<String>) Arrays.asList(array));
+        System.out.println(query);
+
+        try {
+            requestQuery = conn.prepareStatement(query);
+            if (!state) {
+                requestQuery.setInt(1, rowOffset);
+                if (category.equals("")) {
+                    requestQuery.setInt(2, columnOffset);
+                } else {
+                    requestQuery.setString(2, category);
+                    requestQuery.setInt(3, columnOffset);
+                }
+            }
+            rset = requestQuery.executeQuery();
+            String tempState = "";
+            List<String> tempArray = new ArrayList<>();
+            List<String> firstTimeArray = new ArrayList<>();
+            while (rset.next()) {
+                String rsetState = rset.getString("header");
+                if (!rsetState.equals(tempState)) {
+                    if (!tempArray.isEmpty()) {
+                        if (firstTime) {
+                            rValue.add(firstTimeArray);
+                            firstTime = false;
+                        }
+                        rValue.add(tempArray);
+                    } else if (firstTime) {
+                        firstTimeArray.add("");
+                    }
+                    tempState = rsetState;
+                    tempArray = new ArrayList<>();
+                    tempArray.add(tempState + " ($" + String.valueOf(rset.getLong("totalprice")) + ")");
+                }
+                if (firstTime) {
+                    firstTimeArray.add(rset.getString("Name"));
+                }
+                tempArray.add(String.valueOf(rset.getLong("productprice")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
         return rValue;
 
     }
@@ -933,28 +1042,77 @@ public class Servlet extends HttpServlet {
                 String rowSelect = request.getParameter("rowSelect");
                 String orderSelect = request.getParameter("orderSelect");
                 category =(request.getParameter("productCategoryFilter"));
+                String next20 = request.getParameter("next20button");
+                String next10 = request.getParameter("next10button");
+                Enumeration<String> enu = request.getParameterNames();
+                while (enu.hasMoreElements()) {
+                    System.out.println(enu.nextElement());
+                }
                 if (category == null) {
                     try {
-                        category = request.getSession().getAttribute("currentCategoryID").toString();
-                        if (category == null) {
-                            category = "-1";
+                        category = request.getSession().getAttribute("category").toString();
+                        if (category == null || category == "-1") {
+                            category = "";
                         }
                     } catch (Exception e) {
-                        category = "-1";
+                        category = "";
                     }
                 } else if (category.equals("allCategories")) {
-                    category = "-1";
+                    category = "";
                 }
-                if (rowSelect == null) {
-                    rowSelect = "customer";
+                Integer rowNum = 0;
+                Integer columnNum = 0;
+                if (request.getSession().getAttribute("rowNum") != null) {
+                    rowNum = (Integer) request.getSession().getAttribute("rowNum");
                 }
-                if (orderSelect == null) {
-                    orderSelect = "alphabetical";
+                if (request.getSession().getAttribute("columnNum") != null) {
+                    columnNum = (Integer) request.getSession().getAttribute("columnNum");
                 }
-                List<List<String>> productList = getGrid(rowSelect, orderSelect, category);
+                if (next20 == null && next10 == null) {
+                    if (rowSelect == null) {
+                        rowSelect = "customer";
+                    }
+                    if (orderSelect == null) {
+                        orderSelect = "alphabetical";
+                    }
+                    rowNum = 0;
+                    columnNum = 0;
+                    request.getSession().removeAttribute("rowNum");
+                    request.getSession().removeAttribute("columnNum");
+                } else {
+                    if (next20 != null) {
+                        rowNum += 20;
+                        request.getSession().setAttribute("rowNum", rowNum);
+                    } else {
+                        columnNum += 10;
+                        request.getSession().setAttribute("columnNum", columnNum);
+                    }
+                    request.setAttribute("onFirstPage", true);
+                    rowSelect = request.getSession().getAttribute("row").toString();
+                    orderSelect = request.getSession().getAttribute("order").toString();
+                    category = request.getSession().getAttribute("category").toString();
+                    if (category.equals("All Categories")) {
+                        category = "";
+                    }
+                }
+                System.out.println(rowSelect);
+                System.out.println(orderSelect);
+                System.out.println(category);
+                System.out.println(next10);
+                System.out.println(next20);
+                List<List<String>> productList = getGrid(rowSelect.equals("state"), orderSelect.equals("topk"), category, columnNum, rowNum);
+                System.out.println(productList.toString());
+
+                if (category.equals("")) {
+                    category = "All Categories";
+                }
+
 
                 request.setAttribute("displayTableRows", productList);
-                request.setAttribute("noMoreRows", true);
+                request.setAttribute("custOrState", rowSelect + "s");
+                request.getSession().setAttribute("row", rowSelect);
+                request.getSession().setAttribute("order", orderSelect);
+                request.getSession().setAttribute("category", category);
 
                 request.setAttribute("categoriesList", categoryList("-1"));
                 dispatcher = request.getRequestDispatcher("SalesAnalytics.jsp");

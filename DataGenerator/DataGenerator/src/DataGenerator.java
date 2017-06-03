@@ -63,7 +63,11 @@ public class DataGenerator {
 			"Wyoming",
 	};
 	
-	private static String DROP_TABLES = "DROP TABLE accounts, order_history, products, categories, order_history_products";
+	private static String DROP_TABLES = "DROP VIEW if exists someview; DROP TABLE states, accounts, order_history, products, categories, order_history_products";
+
+	private static String CREATE_STATES = "CREATE TABLE states (" +
+			"name TEXT NOT NULL PRIMARY KEY)";
+
 	private static String CREATE_PERSON = "CREATE TABLE accounts ( \"AccountID\" SERIAL PRIMARY KEY, "
 			+ "\"Username\" TEXT NOT NULL UNIQUE, "
 			+ "\"Role\" TEXT NOT NULL, "
@@ -99,6 +103,7 @@ public class DataGenerator {
 			+ "25,"
 			+ "?,"
 			+ "?)";
+	private static String INSERT_STATE  = "INSERT INTO states(name) VALUES(?)";
 	private static String INSERT_CATEGORY = "INSERT INTO categories(\"Name\", \"Description\", \"AccountID\") VALUES(?, ?, 1) ";
 	private static String INSERT_PRODUCT = "INSERT INTO products(\"SKU\", \"Name\", \"Price\", \"CategoryID\", \"AccountID\") VALUES(?, ?, ?, ?, 1) ";
 	private static String INSERT_SHOPPING_CART = "INSERT INTO order_history(\"AccountID\", \"TotalPrice\", \"Date\") VALUES(?, ?, ?) ";
@@ -144,6 +149,7 @@ public class DataGenerator {
 		try {
 			stmt = con.createStatement();
 			stmt.executeUpdate(DROP_TABLES);
+			stmt.executeUpdate(CREATE_STATES);
 			stmt.executeUpdate(CREATE_PERSON);
 			stmt.executeUpdate(CREATE_CATEGORY);
 			stmt.executeUpdate(CREATE_PRODUCT);
@@ -165,7 +171,32 @@ public class DataGenerator {
 			}
 		}
 	}
-	
+
+	private static void insertStates() {
+		PreparedStatement ptst = null;
+		try {
+			ptst = con.prepareStatement(INSERT_STATE);
+			for (String state : states) {
+				ptst.setString(1, state);
+				ptst.addBatch();
+			}
+			ptst.executeBatch();
+			System.out.println("states inserted successfully");
+		} catch (Exception e) {
+			System.out.println("Insert states failed!");
+			e.printStackTrace();
+			System.exit(0);
+		} finally {
+			try {
+				if (ptst != null) {
+					ptst.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	private static void insertCustomers() {
 		System.out.println("Inserting Customers");
 		PreparedStatement ptst = null;
@@ -392,6 +423,9 @@ public class DataGenerator {
 			con.setAutoCommit(false);
 			
 			resetTablesSequences();
+			con.commit();
+
+			insertStates();
 			con.commit();
 			
 			insertCustomers();
