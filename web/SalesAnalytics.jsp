@@ -31,14 +31,30 @@
         var onFirstPage = <%= request.getAttribute("onFirstPage") %>;
 
         $(document).ready(function() {
+            var colCount = 0;
+            
+            $('table.displaytable tr:nth-child(1) td').each(function () {
+                if ($(this).attr('colspan')) {
+                    colCount += +$(this).attr('colspan');
+                } else {
+                    colCount++;
+                }
+            });
+
+            var tableRows = $('#displaytable tr').length;
+            var tableColumns = $( "#displaytable tr td" ).length;
+
+            console.log(colCount);
+            console.log(tableRows);
+            
             if(onFirstPage == true){
                 //Hide the options table if we are not on the first page
                 $("#optionsTable").hide();
             }            
-            if(noMoreProducts == true){
+            if(colCount < 10){
                 $("#next10button").hide();
             }
-            if (noMoreRows == true) {
+            if (tableColumns < 20) {
                 $("#next20button").hide();
             }
             //Bold first col of the display table
