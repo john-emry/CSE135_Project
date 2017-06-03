@@ -165,7 +165,7 @@
     <button type="submit" name="next20button" id="next20button" value="clicked" form="salesAnalyticsForm">Next 20 <%= request.getAttribute("custOrState") %></button>
         <br/>
         <br/>
-        <button type="submit" name="next10button" id="next10button" value="clicked" form="salesAnalyticsForm">Next 10 Products</button>
+    <button type="submit" name="next10button" id="next10button" value="clicked" form="salesAnalyticsForm">Next 10 Products</button>
 
     </form>
     

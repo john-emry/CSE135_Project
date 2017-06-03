@@ -24,7 +24,8 @@ order by p."ProductID" asc
 
 
 --final
-WITH similarProducts AS (	SELECT ohp."ProductID" as product_id, ohp."Price" AS price, a."AccountID" as customer_id FROM order_history_products ohp, accounts a Group BY ohp."ProductID", customer_id, price)
+WITH similarProducts AS (	SELECT ohp."ProductID" as product_id, ohp."Price" AS price, a."AccountID" as customer_id 
+                            FROM order_history_products ohp, accounts a Group BY ohp."ProductID", customer_id, price)
     SELECT p1."Name" AS product1, p2."Name" AS product2,
 
 	(COALESCE((SELECT SUM(CAST(ohp1."Price" as bigint) * CAST(ohp2."Price" as bigint)) 
@@ -42,3 +43,21 @@ GROUP BY p1."ProductID", product1, p2."ProductID", product2
 ORDER BY cosine desc
 LIMIT 100;
 
+--updated latest
+WITH similarProducts AS (	SELECT ohp."ProductID" as product_id, ohp."Price" AS price, a."AccountID" as customer_id FROM order_history_products ohp, accounts a Group BY ohp."ProductID", customer_id, price)
+    SELECT p1."Name" AS product1, p2."Name" AS product2,
+
+	(COALESCE((SELECT SUM(CAST(ohp1."Price" as bigint) * CAST(ohp2."Price" as bigint)) 
+                                                    FROM order_history_products ohp1, 
+                                                    order_history_products ohp2,
+                                                    order_history oh,
+                                                    accounts a 
+
+WHERE ohp1."ProductID" = p1."ProductID" AND ohp2."ProductID" = p2."ProductID" AND oh."AccountID" = a."AccountID"),0))/
+    ((SELECT SUM(CAST("Price" AS bigint)) from order_history_products  ohp WHERE ohp."ProductID" = p1."ProductID") * (SELECT SUM(CAST("Price" AS bigint)) from order_history_products  ohp WHERE ohp."ProductID" = p2."ProductID"))
+AS cosine
+FROM products p1, products p2 
+WHERE p1 < p2 
+GROUP BY p1."ProductID", product1, p2."ProductID", product2 
+ORDER BY cosine desc
+LIMIT 100;
