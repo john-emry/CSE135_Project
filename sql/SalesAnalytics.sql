@@ -45,3 +45,13 @@ ORDER BY header, totalprice, producttable."Name", productprice
 
 
 --Indexes that will benifit: account Username, product name, category name, 
+--Notes: We already have indexes on the primary keys (by default)
+
+CREATE INDEX userNameIndex
+ON accounts ("Username")
+
+CREATE INDEX categoryNameIndex
+ON categories ("Name")
+
+CREATE INDEX productName
+ON products ("Name")

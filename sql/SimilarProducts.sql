@@ -24,7 +24,7 @@ order by p."ProductID" asc
 
 
 --final
-WITH productTotals AS (	SELECT ohp."ProductID" as product_id, ohp."Price" AS price, a."AccountID" as customer_id FROM order_history_products ohp, accounts a Group BY ohp."ProductID", customer_id, price)
+WITH similarProducts AS (	SELECT ohp."ProductID" as product_id, ohp."Price" AS price, a."AccountID" as customer_id FROM order_history_products ohp, accounts a Group BY ohp."ProductID", customer_id, price)
     SELECT p1."Name" AS product1, p2."Name" AS product2,
 
 	(COALESCE((SELECT SUM(CAST(ohp1."Price" as bigint) * CAST(ohp2."Price" as bigint)) 
@@ -41,3 +41,4 @@ WHERE p1 < p2
 GROUP BY p1."ProductID", product1, p2."ProductID", product2 
 ORDER BY cosine desc
 LIMIT 100;
+
