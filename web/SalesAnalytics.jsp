@@ -42,7 +42,7 @@
             });
 
             var tableRows = $('#displaytable tr').length;
-            var tableColumns = $( "#displaytable tr td" ).length;
+            
 
             console.log(colCount);
             console.log(tableRows);
@@ -51,7 +51,7 @@
                 //Hide the options table if we are not on the first page
                 $("#optionsTable").hide();
             }            
-            if(tableColumns < 11){
+            if(colCount < 11){
                 $("#next10button").hide();
             }
             if (tableRows < 21) {
