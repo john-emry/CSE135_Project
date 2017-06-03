@@ -51,7 +51,7 @@
                 //Hide the options table if we are not on the first page
                 $("#optionsTable").hide();
             }            
-            if(tableColumns < 11){
+            if(tableColumns <= 11){
                 $("#next10button").hide();
             }
             if (tableRows < 21) {
@@ -161,10 +161,10 @@
         <br/>
 
     <%--Buttons down here to submit the form: next buttons over the report--%>
-    <button type="submit" name="next20button" value="clicked" form="salesAnalyticsForm">Next 20 <%= request.getAttribute("custOrState") %></button>
+    <button type="submit" name="next20button" id="next20button" value="clicked" form="salesAnalyticsForm">Next 20 <%= request.getAttribute("custOrState") %></button>
         <br/>
         <br/>
-        <button type="submit" name="next10button" value="clicked" form="salesAnalyticsForm">Next 10 Products</button>
+        <button type="submit" name="next10button" id="next10button" value="clicked" form="salesAnalyticsForm">Next 10 Products</button>
 
     </form>
     
