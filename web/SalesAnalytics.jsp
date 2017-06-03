@@ -51,10 +51,10 @@
                 //Hide the options table if we are not on the first page
                 $("#optionsTable").hide();
             }            
-            if(colCount < 10){
+            if(tableColumns < 11){
                 $("#next10button").hide();
             }
-            if (tableColumns < 20) {
+            if (tableRows < 21) {
                 $("#next20button").hide();
             }
             //Bold first col of the display table
