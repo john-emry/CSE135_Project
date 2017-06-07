@@ -389,10 +389,15 @@ public class Servlet extends HttpServlet {
         } else {
             catFilter = CAT_FILTER_YES;
         }
+        String order_by_name = "name, totalprice desc";
+        String order_by_price = "totalprice desc, name";
+        String orderview = "";
         if (topk) {
             orderBy = TOP_K;
+            orderview = order_by_price;
         } else {
             orderBy = ALPHABETICAL;
+            orderview = order_by_name;
         }
         PreparedStatement requestQuery;
         List<List<String>> rValue = new ArrayList<>();
@@ -415,11 +420,11 @@ public class Servlet extends HttpServlet {
             }
             query = "CREATE VIEW someview as\n" +
                     "SELECT * FROM (SELECT a.name as \"State\", a.\"AccountID\", coalesce(SUM(CAST(oh.\"TotalPrice\" as bigint)), 0) as TotalPrice\n" +
-                    "FROM (SELECT a.\"Username\", s.name, a.\"AccountID\" FROM (SELECT * FROM states s ORDER BY name LIMIT 20 OFFSET " + rowOffset + ") s LEFT OUTER JOIN accounts a on s.name = a.\"State\") a \n" +
+                    "FROM (SELECT a.\"Username\", s.name, a.\"AccountID\" FROM (SELECT * FROM states s ORDER BY name LIMIT 21 OFFSET " + rowOffset + ") s LEFT OUTER JOIN accounts a on s.name = a.\"State\") a \n" +
                     "LEFT OUTER JOIN order_history oh \n" +
                     "ON a.\"AccountID\" = oh.\"AccountID\"\n" +
                     "GROUP BY a.name, a.\"AccountID\"\n" +
-                    "ORDER BY a.name) a CROSS JOIN (\n" +
+                    "ORDER BY " + orderview + ") a CROSS JOIN (\n" +
                     "SELECT \"ProductID\", p.\"Name\"\n" +
                     cat_filter +
                     "\nORDER BY p.\"Name\"\n" +
@@ -445,15 +450,15 @@ public class Servlet extends HttpServlet {
                     "GROUP BY producttable.\"State\", producttable.\"Name\", producttable.\"ProductID\", producttable.totalprice\n" +
                     orderBy;
         } else {
-            query = "SELECT producttable.\"Username\" as header, producttable.\"Name\", producttable.\"ProductID\", coalesce(SUM(orders.\"Price\"), 0) as productprice, producttable.totalprice as totalprice\n" +
+            query = "SELECT producttable.name as header, producttable.\"Name\", producttable.\"ProductID\", coalesce(SUM(orders.\"Price\"), 0) as productprice, producttable.totalprice as totalprice\n" +
                     "FROM (Select * FROM (\n" +
-                    "SELECT a.\"Username\", a.\"AccountID\", coalesce(SUM(CAST(oh.\"TotalPrice\" as bigint)), 0) as TotalPrice\n" +
+                    "SELECT a.\"Username\" as name, a.\"AccountID\", coalesce(SUM(CAST(oh.\"TotalPrice\" as bigint)), 0) as TotalPrice\n" +
                     "FROM accounts a \n" +
                     "LEFT OUTER JOIN order_history oh \n" +
                     "ON a.\"AccountID\" = oh.\"AccountID\"\n" +
                     "GROUP BY a.\"Username\", a.\"AccountID\"\n" +
-                    "ORDER BY a.\"Username\"\n" +
-                    "LIMIT 20 OFFSET ?) a CROSS JOIN (\n" +
+                    "ORDER BY " + orderview + "\n" +
+                    "LIMIT 21 OFFSET ?) a CROSS JOIN (\n" +
                     "SELECT \"ProductID\", p.\"Name\"\n" +
                     catFilter +
                     "\nORDER BY p.\"Name\"\n" +
@@ -464,7 +469,7 @@ public class Servlet extends HttpServlet {
                     ") orders\n" +
                     "ON orders.\"ProductID\" = producttable.\"ProductID\"\n" +
                     "AND orders.\"AccountID\" = producttable.\"AccountID\"\n" +
-                    "GROUP BY producttable.\"Username\", producttable.totalprice, producttable.\"Name\", producttable.\"ProductID\"\n" +
+                    "GROUP BY producttable.name, producttable.totalprice, producttable.\"Name\", producttable.\"ProductID\"\n" +
                     orderBy;
         }
         System.out.println(query);
@@ -684,6 +689,7 @@ public class Servlet extends HttpServlet {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Categories\"/><br/>\n" +
                             "    <input type=\"submit\" name=\"func\" value=\"Products\"/><br/>\n");
                     out.println("    <input type=\"submit\" name=\"func\" value=\"SalesAnalytics\"/><br/>\n");
+                    out.println("    <input type=\"submit\" name=\"func\" value=\"SimilarProducts\"/><br/>\n");
                 } else {
                     out.println("    <input type=\"submit\" name=\"func\" value=\"Checkout\"/><br/>\n");
                 }
@@ -1118,6 +1124,9 @@ public class Servlet extends HttpServlet {
                 dispatcher = request.getRequestDispatcher("SalesAnalytics.jsp");
                 dispatcher.forward(request, response);
                 break;
+            case "SimilarProducts":
+                dispatcher = request.getRequestDispatcher("SimilarProducts.jsp");
+                dispatcher.forward(request, response);
             default:
                 break;
         }
