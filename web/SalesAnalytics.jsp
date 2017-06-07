@@ -26,37 +26,23 @@
 
     </style>
     <script type="text/javascript">
-        var noMoreProducts = <%= request.getAttribute("noMoreProducts") %>;
-        var noMoreRows = <%= request.getAttribute("noMoreRows") %>;
-        var onFirstPage = <%= request.getAttribute("onFirstPage") %>;
+
+        function refreshGrid(){
+            //Adjust url for jsp page, how will we show what rows aer updated?
+            $.ajax({
+                url: "script.jsp",
+                method: "POST",
+                data: { id : menuId },
+                dataType: "html", 
+        
+            }).done(function( msg ) {
+                console.log( "Data loaded: " + data );
+            });;
+            
+        }
 
         $(document).ready(function() {
-            var colCount = 0;
             
-            $('table.displaytable tr:nth-child(1) td').each(function () {
-                if ($(this).attr('colspan')) {
-                    colCount += +$(this).attr('colspan');
-                } else {
-                    colCount++;
-                }
-            });
-
-            var tableRows = $('#displaytable tr').length;
-            
-
-            console.log(colCount);
-            console.log(tableRows);
-            
-            if(onFirstPage == true){
-                //Hide the options table if we are not on the first page
-                $("#optionsTable").hide();
-            }            
-            if(colCount < 11){
-                $("#next10button").hide();
-            }
-            if (tableRows < 21) {
-                $("#next20button").hide();
-            }
             //Bold first col of the display table
             $("#displayTable").find("td:first-child").css("font-weight", "bold");
             //Bold the first row (col headers)
@@ -70,7 +56,7 @@
 </head>
 <body>
 <div>
-    <h2 class="center">Sales Analytics</h2>
+    <h2 class="center">Sales Analytics V2</h2>
     <h2 class="center">Hello:&nbsp;<%= request.getSession().getAttribute("Username") %></h2>
 
     <%--Update this section so that admins see everything but checkout page, users do not see categories and products--%>
@@ -100,29 +86,8 @@
 
   
     <form action="/Servlet?func=SalesAnalytics" method="post"  id="salesAnalyticsForm">
+
     <table class="optionsTable" id="optionsTable">
-        <tr>
-            <td style="width: 200px;">Row settings:</td>
-            <td style="width: 200px;">Order settings:</td>
-        </tr>
-        <tr>
-            <td>
-                <select name="rowSelect" id="rowSelect">
-                    <option value="customer" default>Customers</option>
-                    <option value="state">States</option>
-                </select>
-            </td>
-            <td>
-                <select name="orderSelect" id="orderSelect">
-                    <option value="alphabetical" default>Alphabetical</option>
-                    <option value="topk">Top-K</option>
-                </select>
-            </td>
-            
-        </tr>
-        <tr>
-            <td style="width: 200px;" colspan="3">Sales Filtering</td>
-        </tr>
         <tr>
             <td style="width: 200px;">Product Category Filter</td>
         </tr>
@@ -139,15 +104,16 @@
     </table>
     <table class="optionsTable">
         <tr>
-            <td style="width: 200px;">Row Type: <%= request.getSession().getAttribute("row")%></td>
-            <td style="width: 200px;">Order Type: <%= request.getSession().getAttribute("order")%></td>
             <td style="width: 400px;">Category Filter: <%= request.getSession().getAttribute("category")%></td>
         </tr>
     </table>
     <br/>
-    <button type="submit" name="updateViewSettings" form="salesAnalyticsForm" >Run Query</button>
+    <button type="submit" name="updateViewSettings" form="salesAnalyticsForm" >Run</button>
     <br/>
-        <br/>
+    <br/>
+    <button type="button" onclick="refreshGrid();" name="updateViewSettings" form="salesAnalyticsForm" >Refresh</button>
+    <br/>
+    <br/>
 
     <table class="displayTable" id="displayTable">
         <c:forEach items="${displayTableRows}" var="displayTable">
@@ -158,15 +124,6 @@
             </tr>
         </c:forEach>
     </table>
-        <br/>
-        <br/>
-
-    <%--Buttons down here to submit the form: next buttons over the report--%>
-    <button type="submit" name="next20button" id="next20button" value="clicked" form="salesAnalyticsForm">Next 20 <%= request.getAttribute("custOrState") %></button>
-        <br/>
-        <br/>
-    <button type="submit" name="next10button" id="next10button" value="clicked" form="salesAnalyticsForm">Next 10 Products</button>
-
     </form>
     
 </div>

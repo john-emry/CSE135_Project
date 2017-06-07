@@ -63,7 +63,7 @@ public class DataGenerator {
 			"Wyoming",
 	};
 	
-	private static String DROP_TABLES = "DROP VIEW if exists someview; DROP TABLE states, accounts, order_history, products, categories, order_history_products";
+	private static String DROP_TABLES = "DROP VIEW if exists someview; DROP TABLE if exists states, accounts, order_history, products, categories, order_history_products";
 
 	private static String CREATE_STATES = "CREATE TABLE states (" +
 			"name TEXT NOT NULL PRIMARY KEY)";
