@@ -403,80 +403,47 @@ public class Servlet extends HttpServlet {
         List<List<String>> rValue = new ArrayList<>();
         boolean firstTime = true;
         System.out.println("CATEGORY: " + category);
-        if (state) {
-            query = "DROP VIEW if exists someview";
-            try {
-                conn.prepareStatement(query).executeUpdate();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            String cat_filter = "";
-            if (category.equals("")) {
-                cat_filter = "FROM products p";
-            } else {
-                cat_filter = "FROM products p, categories c\n" +
-                        "WHERE p.\"CategoryID\" = c.\"CategoryID\"\n" +
-                        "AND c.\"Name\" = " + category;
-            }
-            query = "CREATE VIEW someview as\n" +
-                    "SELECT * FROM (SELECT a.name as \"State\", a.\"AccountID\", coalesce(SUM(CAST(oh.\"TotalPrice\" as bigint)), 0) as TotalPrice\n" +
-                    "FROM (SELECT a.\"Username\", s.name, a.\"AccountID\" FROM (SELECT * FROM states s ORDER BY name LIMIT 21 OFFSET " + rowOffset + ") s LEFT OUTER JOIN accounts a on s.name = a.\"State\") a \n" +
-                    "LEFT OUTER JOIN order_history oh \n" +
-                    "ON a.\"AccountID\" = oh.\"AccountID\"\n" +
-                    "GROUP BY a.name, a.\"AccountID\"\n" +
-                    "ORDER BY " + orderview + ") a CROSS JOIN (\n" +
-                    "SELECT \"ProductID\", p.\"Name\"\n" +
-                    cat_filter +
-                    "\nORDER BY p.\"Name\"\n" +
-                    "LIMIT 10 OFFSET " + columnOffset + ") products;" +
-                    "ALTER VIEW someview\n" +
-                    "OWNER to postgres;";
-            try {
-                Statement st = conn.createStatement();
-                st.execute(query);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            query = "SELECT producttable.\"State\" as header, producttable.\"Name\", producttable.\"ProductID\", coalesce(SUM(orders.\"Price\"), 0) as productprice, producttable.totalprice as totalprice\n" +
-                    "FROM (SELECT totals.totalprice, someview.\"State\", someview.\"AccountID\", someview.\"ProductID\", someview.\"Name\"\n" +
-                    "FROM (SELECT \"State\", Sum(TotalPrice) totalprice FROM someview\n" +
-                    "GROUP BY \"State\") totals LEFT OUTER JOIN someview on totals.\"State\" = someview.\"State\") producttable\n" +
-                    "LEFT OUTER JOIN (SELECT oh.\"AccountID\", ohp.\"ProductID\", CAST(ohp.\"Price\" as bigint)\n" +
-                    "FROM order_history_products ohp, order_history oh\n" +
-                    "WHERE ohp.\"OrderHistoryID\" = oh.\"OrderHistoryID\"\n" +
-                    ") orders\n" +
-                    "ON orders.\"ProductID\" = producttable.\"ProductID\"\n" +
-                    "AND orders.\"AccountID\" = producttable.\"AccountID\"\n" +
-                    "GROUP BY producttable.\"State\", producttable.\"Name\", producttable.\"ProductID\", producttable.totalprice\n" +
-                    orderBy;
-        } else {
-            query = "SELECT producttable.name as header, producttable.\"Name\", producttable.\"ProductID\", coalesce(SUM(orders.\"Price\"), 0) as productprice, producttable.totalprice as totalprice\n" +
-                    "FROM (Select * FROM (\n" +
-                    "SELECT a.\"Username\" as name, a.\"AccountID\", coalesce(SUM(CAST(oh.\"TotalPrice\" as bigint)), 0) as TotalPrice\n" +
-                    "FROM accounts a \n" +
-                    "LEFT OUTER JOIN order_history oh \n" +
-                    "ON a.\"AccountID\" = oh.\"AccountID\"\n" +
-                    "GROUP BY a.\"Username\", a.\"AccountID\"\n" +
-                    "ORDER BY " + orderview + "\n" +
-                    "LIMIT 21 OFFSET ?) a CROSS JOIN (\n" +
-                    "SELECT \"ProductID\", p.\"Name\"\n" +
-                    catFilter +
-                    "\nORDER BY p.\"Name\"\n" +
-                    "LIMIT 10 OFFSET ?) product) producttable\n" +
-                    "LEFT OUTER JOIN (SELECT oh.\"AccountID\", ohp.\"ProductID\", CAST(ohp.\"Price\" as bigint)\n" +
-                    "FROM order_history_products ohp, order_history oh\n" +
-                    "WHERE ohp.\"OrderHistoryID\" = oh.\"OrderHistoryID\"\n" +
-                    ") orders\n" +
-                    "ON orders.\"ProductID\" = producttable.\"ProductID\"\n" +
-                    "AND orders.\"AccountID\" = producttable.\"AccountID\"\n" +
-                    "GROUP BY producttable.name, producttable.totalprice, producttable.\"Name\", producttable.\"ProductID\"\n" +
-                    orderBy;
-        }
+        query = "with overall_table as \n" +
+                "(select pc.\"ProductID\",c.\"State\",sum(CAST(pc.\"Price\" as bigint)*pc.\"Quantity\") as amount\n" +
+                "from order_history_products pc  \n" +
+                "inner join order_history sc on (sc.\"OrderHistoryID\" = pc.\"OrderHistoryID\")\n" +
+                "inner join products p on (pc.\"ProductID\" = p.\"ProductID\")\n" +
+                "inner join accounts c on (sc.\"AccountID\" = c.\"AccountID\")\n" +
+                "group by pc.\"ProductID\",c.\"State\"\n" +
+                "),\n" +
+                "top_state as\n" +
+                "(select \"State\", sum(amount) as dollar from (\n" +
+                "select \"State\", amount from overall_table\n" +
+                "UNION ALL\n" +
+                "select name as \"State\", 0.0 as amount from states\n" +
+                ") as state_union\n" +
+                " group by \"State\" order by dollar desc limit 50\n" +
+                "),\n" +
+                "top_n_state as \n" +
+                "(select row_number() over(order by dollar desc) as state_order, \"State\", dollar from top_state\n" +
+                "),\n" +
+                "top_prod as \n" +
+                "(select \"ProductID\", sum(amount) as dollar from (\n" +
+                "select \"ProductID\", amount from overall_table\n" +
+                "UNION ALL\n" +
+                "select \"ProductID\", 0.0 as amount from products\n" +
+                ") as product_union\n" +
+                "group by \"ProductID\" order by dollar desc limit 50\n" +
+                "),\n" +
+                "top_n_prod as \n" +
+                "(select row_number() over(order by dollar desc) as product_order, \"ProductID\", dollar from top_prod\n" +
+                ")\n" +
+                "select ts.\"State\" as header, tp.\"ProductID\", pr.\"Name\", COALESCE(ot.amount, 0.0) as productprice, ts.dollar as totalprice, tp.dollar as producttotal\n" +
+                "from top_n_prod tp CROSS JOIN top_n_state ts \n" +
+                "LEFT OUTER JOIN overall_table ot \n" +
+                "ON ( tp.\"ProductID\" = ot.\"ProductID\" and ts.\"State\" = ot.\"State\")\n" +
+                "inner join products pr ON tp.\"ProductID\" = pr.\"ProductID\"\n" +
+                "order by ts.state_order, tp.product_order";
         System.out.println(query);
 
         try {
             requestQuery = conn.prepareStatement(query);
-            if (!state) {
+            /*if (!state) {
                 requestQuery.setInt(1, rowOffset);
                 if (category.equals("")) {
                     requestQuery.setInt(2, columnOffset);
@@ -484,7 +451,7 @@ public class Servlet extends HttpServlet {
                     requestQuery.setString(2, category);
                     requestQuery.setInt(3, columnOffset);
                 }
-            }
+            }*/
             rset = requestQuery.executeQuery();
             String tempState = "";
             List<String> tempArray = new ArrayList<>();
@@ -506,7 +473,7 @@ public class Servlet extends HttpServlet {
                     tempArray.add(tempState + " ($" + String.valueOf(rset.getLong("totalprice")) + ")");
                 }
                 if (firstTime) {
-                    firstTimeArray.add(rset.getString("Name"));
+                    firstTimeArray.add(rset.getString("Name") + " ($" + String.valueOf(rset.getLong("producttotal")) + ")");
                 }
                 tempArray.add(String.valueOf(rset.getLong("productprice")));
             }
