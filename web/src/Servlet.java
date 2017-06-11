@@ -380,6 +380,105 @@ public class Servlet extends HttpServlet {
 
     private final String ALPHABETICAL = "ORDER BY header, totalprice desc, producttable.\"Name\", productprice desc";
 
+    private List<List<String>> createTempTable() {
+        String query = "drop table if exists precomp" +
+                "create table precomp as" +
+                "(with overall_table as \n" +
+                "(select p.\"CategoryID\", pc.\"ProductID\",c.\"State\",sum(CAST(pc.\"Price\" as bigint)*pc.\"Quantity\") as amount  \n" +
+                "from order_history_products pc  \n" +
+                "inner join order_history sc on (sc.\"OrderHistoryID\" = pc.\"OrderHistoryID\")\n" +
+                "inner join products p on (pc.\"ProductID\" = p.\"ProductID\") -- add category filter if any\n" +
+                "inner join accounts c on (sc.\"AccountID\" = c.\"AccountID\")\n" +
+                "group by pc.\"ProductID\",c.\"State\", p.\"CategoryID\"\n" +
+                "),\n" +
+                "top_state as\n" +
+                "(select \"State\", sum(amount) as dollar from (\n" +
+                "select \"State\", amount from overall_table\n" +
+                "UNION ALL\n" +
+                "select name as \"State\", 0.0 as amount from states\n" +
+                ") as state_union\n" +
+                " group by \"State\" order by dollar desc limit 50\n" +
+                "),\n" +
+                "top_n_state as \n" +
+                "(select row_number() over(order by dollar desc) as state_order, \"State\", dollar from top_state\n" +
+                "),\n" +
+                "top_prod as \n" +
+                "(select \"ProductID\", \"CategoryID\", sum(amount) as dollar from (\n" +
+                "select \"ProductID\", \"CategoryID\", amount from overall_table\n" +
+                "UNION ALL\n" +
+                "select \"ProductID\", \"CategoryID\", 0.0 as amount from products\n" +
+                ") as product_union\n" +
+                "group by \"ProductID\", \"CategoryID\" order by dollar desc\n" +
+                "),\n" +
+                "top_n_prod as \n" +
+                "(select row_number() over(order by dollar desc) as product_order, \"ProductID\", \"CategoryID\", dollar from top_prod\n" +
+                ")\n" +
+                "select ts.\"State\" as header, tp.\"CategoryID\", tp.\"ProductID\", pr.\"Name\", COALESCE(ot.amount, 0.0) as cell_sum, ts.dollar as totalprice, tp.dollar as productprice\n" +
+                "from top_n_prod tp CROSS JOIN top_n_state ts \n" +
+                "LEFT OUTER JOIN overall_table ot \n" +
+                "ON ( tp.\"ProductID\" = ot.\"ProductID\" and ts.\"State\" = ot.\"State\")\n" +
+                "inner join products pr ON tp.\"ProductID\" = pr.\"ProductID\"\n" +
+                "order by ts.state_order, tp.product_order)";
+        System.out.println(query);
+        List<List<String>> rValue = new ArrayList<>();
+        try {
+            PreparedStatement requestQuery = conn.prepareStatement(query);
+            requestQuery.execute();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+        return getPreCompValues();
+    }
+
+    private List<List<String>> getPreCompValues() {
+        List<List<String>> rValue = new ArrayList<>();
+        try {
+            PreparedStatement requestQuery;
+            String query = "SELECT header, \"ProductID\", \"Name\", cell_sum, totalprice, productprice\n" +
+                    "FROM (SELECT\n" +
+                    "header, \"ProductID\", \"Name\", cell_sum, totalprice, productprice, row_number() over (partition by header order by productprice DESC)\n" +
+                    "FROM precomp\n" +
+                    "--Where \"CategoryID\" = ?\n" +
+                    "GROUP BY \"ProductID\", header, \"Name\", cell_sum, totalprice, productprice\n" +
+                    "ORDER BY totalprice DESC, header, productprice DESC) as subquery\n" +
+                    "WHERE row_number <= 50";
+            requestQuery = conn.prepareStatement(query);
+            ResultSet rset = requestQuery.executeQuery();
+            String tempState = "";
+            List<String> tempArray = new ArrayList<>();
+            List<String> firstTimeArray = new ArrayList<>();
+            boolean firstTime = true;
+            while (rset.next()) {
+                String rsetState = rset.getString("header");
+                if (!rsetState.equals(tempState)) {
+                    if (!tempArray.isEmpty()) {
+                        if (firstTime) {
+                            rValue.add(firstTimeArray);
+                            firstTime = false;
+                        }
+                        rValue.add(tempArray);
+                    } else if (firstTime) {
+                        firstTimeArray.add("");
+                    }
+                    tempState = rsetState;
+                    tempArray = new ArrayList<>();
+                    tempArray.add(tempState + " ($" + String.valueOf(rset.getLong("totalprice")) + ")");
+                }
+                if (firstTime) {
+                    firstTimeArray.add(rset.getString("Name") + " ($" + String.valueOf(rset.getLong("producttotal")) + ")");
+                }
+                tempArray.add(String.valueOf(rset.getLong("productprice")));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+        return rValue;
+    }
+
     private List<List<String>> getGrid(boolean state, boolean topk, String category, int columnOffset, int rowOffset) {
         String catFilter = "";
         String query = "";
@@ -403,13 +502,15 @@ public class Servlet extends HttpServlet {
         List<List<String>> rValue = new ArrayList<>();
         boolean firstTime = true;
         System.out.println("CATEGORY: " + category);
-        query = "with overall_table as \n" +
-                "(select pc.\"ProductID\",c.\"State\",sum(CAST(pc.\"Price\" as bigint)*pc.\"Quantity\") as amount\n" +
+        query = "drop table if exists precomp" +
+                "create table precomp as" +
+                "(with overall_table as \n" +
+                "(select p.\"CategoryID\", pc.\"ProductID\",c.\"State\",sum(CAST(pc.\"Price\" as bigint)*pc.\"Quantity\") as amount  \n" +
                 "from order_history_products pc  \n" +
                 "inner join order_history sc on (sc.\"OrderHistoryID\" = pc.\"OrderHistoryID\")\n" +
-                "inner join products p on (pc.\"ProductID\" = p.\"ProductID\")\n" +
+                "inner join products p on (pc.\"ProductID\" = p.\"ProductID\") -- add category filter if any\n" +
                 "inner join accounts c on (sc.\"AccountID\" = c.\"AccountID\")\n" +
-                "group by pc.\"ProductID\",c.\"State\"\n" +
+                "group by pc.\"ProductID\",c.\"State\", p.\"CategoryID\"\n" +
                 "),\n" +
                 "top_state as\n" +
                 "(select \"State\", sum(amount) as dollar from (\n" +
@@ -423,22 +524,22 @@ public class Servlet extends HttpServlet {
                 "(select row_number() over(order by dollar desc) as state_order, \"State\", dollar from top_state\n" +
                 "),\n" +
                 "top_prod as \n" +
-                "(select \"ProductID\", sum(amount) as dollar from (\n" +
-                "select \"ProductID\", amount from overall_table\n" +
+                "(select \"ProductID\", \"CategoryID\", sum(amount) as dollar from (\n" +
+                "select \"ProductID\", \"CategoryID\", amount from overall_table\n" +
                 "UNION ALL\n" +
-                "select \"ProductID\", 0.0 as amount from products\n" +
+                "select \"ProductID\", \"CategoryID\", 0.0 as amount from products\n" +
                 ") as product_union\n" +
-                "group by \"ProductID\" order by dollar desc limit 50\n" +
+                "group by \"ProductID\", \"CategoryID\" order by dollar desc\n" +
                 "),\n" +
                 "top_n_prod as \n" +
-                "(select row_number() over(order by dollar desc) as product_order, \"ProductID\", dollar from top_prod\n" +
+                "(select row_number() over(order by dollar desc) as product_order, \"ProductID\", \"CategoryID\", dollar from top_prod\n" +
                 ")\n" +
-                "select ts.\"State\" as header, tp.\"ProductID\", pr.\"Name\", COALESCE(ot.amount, 0.0) as productprice, ts.dollar as totalprice, tp.dollar as producttotal\n" +
+                "select ts.\"State\" as header, tp.\"CategoryID\", tp.\"ProductID\", pr.\"Name\", COALESCE(ot.amount, 0.0) as cell_sum, ts.dollar as totalprice, tp.dollar as productprice\n" +
                 "from top_n_prod tp CROSS JOIN top_n_state ts \n" +
                 "LEFT OUTER JOIN overall_table ot \n" +
                 "ON ( tp.\"ProductID\" = ot.\"ProductID\" and ts.\"State\" = ot.\"State\")\n" +
                 "inner join products pr ON tp.\"ProductID\" = pr.\"ProductID\"\n" +
-                "order by ts.state_order, tp.product_order";
+                "order by ts.state_order, tp.product_order)";
         System.out.println(query);
 
         try {
@@ -1073,13 +1174,12 @@ public class Servlet extends HttpServlet {
                 System.out.println(category);
                 System.out.println(next10);
                 System.out.println(next20);
-                List<List<String>> productList = getGrid(rowSelect.equals("state"), orderSelect.equals("topk"), category, columnNum, rowNum);
+                List<List<String>> productList = createTempTable();
                 System.out.println(productList.toString());
 
                 if (category.equals("")) {
                     category = "All Categories";
                 }
-
 
                 request.setAttribute("displayTableRows", productList);
                 request.setAttribute("custOrState", rowSelect + "s");
