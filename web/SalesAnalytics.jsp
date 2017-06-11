@@ -24,20 +24,45 @@
             min-height: 20px;
         }
 
+        .purple {
+            color: purple;
+        }
+        .red {
+            color: red;
+        }
+
     </style>
     <script type="text/javascript">
 
         function refreshGrid(){
             //Adjust url for jsp page, how will we show what rows aer updated?
+            debugger;
             $.ajax({
                 url: "script.jsp",
                 method: "POST",
-                data: { id : menuId },
+                data: { id : menuId }, //maybe pass the column selector value here?
                 dataType: "html", 
         
             }).done(function( msg ) {
                 console.log( "Data loaded: " + data );
-            });;
+
+                //Iterate on json
+                $.each(data, function(i, obj) {
+                    console.log(obj.type);
+                    //Product name change / delete.
+                    //Should only be on row header right?
+                    if(obj.type == "p"){
+                        //Get the col number of the object that 
+                        var colNumber = $("#" + obj.id).parent().children().index($("#" + obj.id));
+
+                        $("tr td:nth-child(" + colNumber + ")").addClass("purple");
+                    }
+                    else{
+                        //Just color the table cell
+                        $("#"+obj.id).addClass("red");
+                    }
+                });
+            });
             
         }
 
