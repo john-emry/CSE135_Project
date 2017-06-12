@@ -38,13 +38,13 @@
 
         function refreshGrid(){
             //Adjust url for jsp page, how will we show what rows aer updated?
-            debugger;
             $.get("/Servlet?func=refresh", function(responseJson) {
                 console.log( "Data loaded: " + responseJson );
-
+                debugger;
 
                 //Iterate on json
                 $.each(responseJson, function(index, obj) {
+                    debugger;
                     console.log(obj["type"]);
                     //Product name change / delete.
                     //Should only be on row header right?
@@ -141,7 +141,7 @@
         <c:forEach items="${displayTableRows}" var="displayTable">
             <tr class="displayTable">
                 <c:forEach items="${displayTable}" var="columnVal">
-                    <td class="displayTable">${columnVal}</td>
+                    <td class="displayTable" id="${columnVal['id']}">${columnVal['value']}</td>
                 </c:forEach>
             </tr>
         </c:forEach>
