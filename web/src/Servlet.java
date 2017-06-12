@@ -415,7 +415,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
 
     private final String ALPHABETICAL = "ORDER BY header, totalprice desc, producttable.\"Name\", productprice desc";
 
-    private List<List<String>> createTempTable(int AccountID, String cat) {
+    private List<List<Map<String, String>>> createTempTable(int AccountID, String cat) {
         String query = "drop table if exists precomp; drop table if exists sales_log;\n" +
                 "create table precomp as" +
                 "(with overall_table as \n" +
@@ -629,16 +629,29 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                         }
                         rValue.add(tempArray);
                     } else if (firstTime) {
-                        firstTimeArray.add("");
+                        Map<String, String> tempMap = new HashMap<>();
+                        tempMap.put("id", "");
+                        tempMap.put("value", "");
+                        firstTimeArray.add(tempMap);
                     }
                     tempState = rsetState;
                     tempArray = new ArrayList<>();
-                    tempArray.add(tempState + " ($" + String.valueOf(rset.getLong("totalprice")) + ")");
+                    Map<String, String> tempMap = new HashMap<>();
+                    tempMap.put("id", rset.getString("header"));
+                    tempMap.put("value", tempState + " ($" + String.valueOf(rset.getLong("totalprice")) + ")");
+                    tempArray.add(tempMap);
                 }
                 if (firstTime) {
-                    firstTimeArray.add(rset.getString("Name") + " ($" + String.valueOf(rset.getLong("productprice")) + ")");
+                    Map<String, String> tempMap = new HashMap<>();
+                    tempMap.put("id", String.valueOf(rset.getInt("ProductID")));
+                    tempMap.put("value", rset.getString("Name") + " ($" + String.valueOf(rset.getLong("productprice")) + ")");
+                    tempArray.add(tempMap);
+                    firstTimeArray.add(tempMap);
                 }
-                tempArray.add(String.valueOf(rset.getLong("cell_sum")));
+                Map<String, String> tempMap = new HashMap<>();
+                tempMap.put("id", rset.getString("header") + String.valueOf(rset.getInt("ProductID")));
+                tempMap.put("value", String.valueOf(rset.getLong("cell_sum")));
+                tempArray.add(tempMap);
             }
 
         } catch (Exception e) {
@@ -1270,7 +1283,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 System.out.println(category);
                 System.out.println(next10);
                 System.out.println(next20);
-                List<List<String>> productList = createTempTable(((int) request.getSession().getAttribute("AccountID")), category);
+                List<List<Map<String, String>>> productList = createTempTable(((int) request.getSession().getAttribute("AccountID")), category);
                 System.out.println(productList.toString());
 
                 if (category.equals("")) {
