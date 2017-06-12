@@ -38,16 +38,15 @@
 
         function refreshGrid(){
             //Adjust url for jsp page, how will we show what rows aer updated?
-            debugger;
+            //debugger;
             $.get("/Servlet?func=refresh", function(responseJson) {
                 console.log( "Data loaded: " + responseJson );
-
-
+                
                 //Iterate on json
                 $.each(responseJson, function(index, obj) {
-                    console.log(obj["type"]);
-                    //Product name change / delete.
-                    //Should only be on row header right?
+                    console.log(obj["Type"]);
+                    var id = obj["State"] + obj["PID"];
+                                        
                     if(obj["type"] == "p"){
                         //Get the col number of the object that 
                         var colNumber = $("#" + obj["id"]).parent().children().index($("#" + obj["id"]));
@@ -56,7 +55,8 @@
                     }
                     else{
                         //Just color the table cell
-                        $("#"+obj.id).addClass("red");
+                        $("#"+obj["id"]).addClass("red");
+                        $("#"+obj["id"]).text(obj["value"]);
                     }
                 });
             });
