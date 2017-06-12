@@ -490,7 +490,9 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
         PreparedStatement shoppingCartPtst = null, productsCartPtst  = null;
         Statement personSt = null, productSt = null;
         ArrayList<Integer> cartIds = new ArrayList<Integer>();
+
         try {
+            conn.setAutoCommit(false);
             shoppingCartPtst = conn.prepareStatement(INSERT_SHOPPING_CART, Statement.RETURN_GENERATED_KEYS);
             productsCartPtst = conn.prepareStatement(INSERT_PRODUCTS_IN_CART);
             personSt = conn.createStatement();
@@ -559,14 +561,15 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 UpdateStatement.executeUpdate();
             }
             String query2 = "INSERT INTO public.sales_log(\n" +
-                    "\"PID\", \"State\", \"AccountID\", \"ChangeType\")\n" +
-                    "select \"State\", a.\"AccountID\", \"ProductID\" as \"PID\", 'r' as \"ChangeType\"\n" +
+                    "\"PID\", \"State\", \"Price\", \"AccountID\")\n" +
+                    "select \"ProductID\" as \"PID\",\"State\", \"Quantity\"*Cast(\"Price\" as bigint) as \"Price\", a.\"AccountID\"\n" +
                     "from (select \"TotalPrice\", \"AccountID\", \"ProductID\", \"Quantity\", \"Price\" from\n" +
                     "order_history oh inner join order_history_products ohp on oh.\"OrderHistoryID\" = ohp.\"OrderHistoryID\") totals\n" +
                     "inner join accounts a on totals.\"AccountID\" = a.\"AccountID\"";
             PreparedStatement requestQuery = conn.prepareStatement(query2);
             requestQuery.executeUpdate();
             conn.commit();
+            conn.setAutoCommit(true);
         } catch(Exception e) {
             try {
                 conn.rollback();
@@ -668,7 +671,13 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
     }
 
     private JSONArray findLogs(int AccountID) {
-        String query = "Select p.\"ProductID\", p.\"Name\", \"State\", SUM(coalesce(CAST(s.\"Price\" as bigint), 0)) as price, \"ChangeType\" FROM sales_log s, products p WHERE \"AccountID\" = ? AND s.\"ProductID\" = p.\"ProductID\"";
+        String query = "select \"ProductID\", \"State\", cell_sum, totalprice, coalesce(productprice, 0)\n" +
+                "from (select header, \"ProductID\", \"Name\", cell_sum, totalprice, productprice\n" +
+                "from (select header, \"ProductID\", \"Name\", cell_sum, totalprice, productprice, row_number() over (partition by header order by productprice DESC)\n" +
+                "from precomp\n" +
+                "group by \"ProductID\", header, \"Name\", cell_sum, totalprice, productprice\n" +
+                "order by totalprice desc, header, productprice desc) as subquery\n" +
+                "where row_number <= 50) st inner join sales_log sl on st.\"ProductID\" = sl.\"PID\"";
         JSONArray rArray = new JSONArray();
         try {
             PreparedStatement requestQuery = conn.prepareStatement(query);
@@ -676,11 +685,16 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             ResultSet rset = requestQuery.executeQuery();
             while (rset.next()) {
                 JSONObject tempObj = new JSONObject();
-                tempObj.put("type", rset.getString("ChangeType"));
+                String changeType = "";
+                if (rset.getInt("productprice") == 0) {
+                    changeType = "p";
+                } else {
+                    changeType = "r";
+                }
+                tempObj.put("Type", changeType);
                 tempObj.put("State", rset.getString("State"));
-                tempObj.put("Product", rset.getString("Name"));
-                tempObj.put("Price", rset.getInt("price"));
-                tempObj.put("id", rset.getInt("ProductID"));
+                tempObj.put("PID", rset.getInt("ProductID"));
+                tempObj.put("Value", rset.getInt("cell_sum"));
                 rArray.put(tempObj);
             }
         } catch (Exception e) {
@@ -800,9 +814,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (request.getParameter("func").equals("refresh")) {
             //JSONArray responseValue = findLogs((int) request.getSession().getAttribute("AccountID"));
-            JSONArray rValue = new JSONArray();
-            JSONObject rObject = new JSONObject().put("type", "r").put("Value", 1234).put("State", "California").put("PID", 811);
-            rValue.put(rObject);
+            JSONArray rValue = findLogs((int) request.getSession().getAttribute("AccountID"));
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write(rValue.toString());
