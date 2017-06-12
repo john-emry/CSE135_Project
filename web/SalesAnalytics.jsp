@@ -38,30 +38,46 @@
 
         function refreshGrid(){
             //Adjust url for jsp page, how will we show what rows aer updated?
+                                        
+            //Ajax call to refresh the grid, we pass a json object                                        
             $.get("/Servlet?func=refresh", function(responseJson) {
                 console.log( "Data loaded: " + responseJson );
-                debugger;
+                // debugger;
 
                 //Iterate on json
                 $.each(responseJson, function(index, obj) {
-                    debugger;
-                    console.log(obj["type"]);
-                    //Product name change / delete.
-                    //Should only be on row header right?
-                    if(obj["type"] == "p"){
-                        //Get the col number of the object that 
-                        var colNumber = $("#" + obj["id"]).parent().children().index($("#" + obj["id"]));
+                    // debugger;
+                    
+                    var id = obj["State"] + obj["PID"];
+                    var value = obj["Value"];
 
+                    if(obj["Type"] == "p"){
+                        //Get the col number of the object that 
+                        var colNumber = $("#" + id).parent().children().index($("#" + id));
                         $("tr td:nth-child(" + colNumber + ")").addClass("purple");
                     }
                     else{
                         //Just color the table cell
-                        $("#"+obj.id).addClass("red");
+                        $("#" + id).addClass("red");
+                        $("#" + id).text(value);
                     }
                 });
             });
             
         }
+
+
+        function buyOrdersFastScript(){
+            //Adjust url for jsp page, how will we show what rows aer updated?
+            var numOrders = $("#numOrders").val();
+            //Ajax call to refresh the grid, we pass a json object
+
+            $.get("/Servlet?func=buyOrders&numOrders=" + numOrders, function(responseJson) {
+               
+            });
+            
+        }
+
 
         $(document).ready(function() {
             
@@ -134,6 +150,11 @@
     <br/>
     <br/>
     <button type="button" onclick="refreshGrid();" name="updateViewSettings" form="salesAnalyticsForm" >Refresh</button>
+    <br/>
+    <br/>
+    <%--Added to buy orders--%>
+    <button type="button" onclick="buyOrdersFastScript();" name="buyOrders">Buy Orders</button>
+    <input type="number" style="width:40px;" id="numOrders"/>
     <br/>
     <br/>
 
