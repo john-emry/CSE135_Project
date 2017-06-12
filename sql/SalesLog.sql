@@ -3,9 +3,8 @@ CREATE TABLE public.sales_log
 (
     "SLID" serial NOT NULL,
     "PID" bigint NOT NULL,
-    "Price" text NOT NULL,
-    "Viewed" boolean NOT NULL,
-    "State" text NOT NULL,
+    "Price" text,
+    "State" text,
     "AccountID" text NOT NULL,
     "ChangeType" text NOT NULL,
     PRIMARY KEY ("SLID")
