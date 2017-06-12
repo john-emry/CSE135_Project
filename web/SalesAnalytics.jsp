@@ -154,7 +154,7 @@
     <br/>
     <%--Added to buy orders--%>
     <button type="button" onclick="buyOrdersFastScript();" name="buyOrders">Buy Orders</button>
-    <input type="number" style="width:40px;" id="numOrders"/>
+    <input type="number" style="width:300px;" id="numOrders"/>
     <br/>
     <br/>
 
