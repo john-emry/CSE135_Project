@@ -4,16 +4,14 @@
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.*;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
 
-public class Servlet extends HttpServlet {
+public class Servlet extends HttpServlet implements HttpSessionListener {
     private static Connection conn = null;
     private static Statement stmt = null;
     private static ResultSet rset = null;
@@ -82,6 +80,26 @@ public class Servlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             error = e.toString();
+        }
+    }
+
+    @Override
+    public void sessionCreated(HttpSessionEvent httpSessionEvent) {
+
+    }
+
+    @Override
+    public void sessionDestroyed(HttpSessionEvent httpSessionEvent) {
+        try {
+            int AccountID = (int) httpSessionEvent.getSession().getAttribute("AccountID");
+            String query = "DELETE * FROM public.sales_log WHERE \"AccountID\" = ?;" +
+                    "DELETE * FROM public.active_users WHERE \"AccountID\" = ?";
+            PreparedStatement delete = conn.prepareStatement(query);
+            delete.setInt(1, AccountID);
+            delete.setInt(2, AccountID);
+            delete.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -201,11 +219,17 @@ public class Servlet extends HttpServlet {
 
     private Boolean productDelete(int prodID, PrintWriter out) {
         try {
-            String query = "Delete from public.Products where \"ProductID\" = ?\n";
+            String query = "Delete from public.Products where \"ProductID\" = ?;\n" +
+                    "INSERT INTO public.sales_log(\n" +
+                    "\"PID\", \"State\", \"AccountID\", \"ChangeType\")\n" +
+                    "Select ?, a.\"State\", au.\"AccountID\", CAST('p' as text) as \"ChangeType\"\n" +
+                    "FROM accounts a, active_users au\n" +
+                    "WHERE a.\"AccountID\" = au.\"AccountID\"";
             PreparedStatement requestQuery;
             try {
                 requestQuery = conn.prepareStatement(query);
                 requestQuery.setInt(1, prodID);
+                requestQuery.setInt(2, prodID);
                 requestQuery.executeUpdate();
                 return true;
             } catch (Exception e) {
@@ -213,7 +237,7 @@ public class Servlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-            //PrintStackTrace(e, out);
+            e.printStackTrace();
             return false;
         }
     }
@@ -224,7 +248,7 @@ public class Servlet extends HttpServlet {
                 return false;
             }
         } catch (Exception e) {
-            ////PrintStackTrace(e, out);
+            e.printStackTrace();
             return false;
         }
         String query = "SELECT \"SKU\" FROM public.Products WHERE \"SKU\"=? AND NOT \"ProductID\"=?";
@@ -251,6 +275,14 @@ public class Servlet extends HttpServlet {
             requestQuery.setString(2, SKU);
             requestQuery.setString(3, price);
             requestQuery.setInt(4, prodID);
+            requestQuery.executeUpdate();
+            String query2 = "INSERT INTO public.sales_log(\n" +
+                    "\"PID\", \"State\", \"AccountID\", \"ChangeType\")\n" +
+                    "Select ?, a.\"State\", au.\"AccountID\", CAST('p' as text) as \"ChangeType\"\n" +
+                    "FROM accounts a, active_users au\n" +
+                    "WHERE a.\"AccountID\" = au.\"AccountID\"";
+            requestQuery = conn.prepareStatement(query2);
+            requestQuery.setInt(1, prodID);
             requestQuery.executeUpdate();
             return true;
         } catch (Exception e) {
@@ -328,6 +360,14 @@ public class Servlet extends HttpServlet {
                     requestQuery.setInt(3, quantity[i]);
                     requestQuery.setInt(4, prices[i]);
                     requestQuery.executeUpdate();
+                    String query2 = "INSERT INTO public.sales_log(\n" +
+                            "\"PID\", \"Price\", \"State\", \"AccountID\", \"ChangeType\")\n" +
+                            "Select ?, ?, a.\"State\", au.\"AccountID\", CAST('r' as text) as \"ChangeType\"\n" +
+                            "FROM accounts a, active_users au\n" +
+                            "WHERE a.\"AccountID\" = au.\"AccountID\"\n";
+                    requestQuery = conn.prepareStatement(query2);
+                    requestQuery.setInt(1, productIDs[i]);
+                    requestQuery.setString(2, String.valueOf(prices[i]));
                 }
             } else {
                 throw new Exception("no orders found");
@@ -368,20 +408,12 @@ public class Servlet extends HttpServlet {
         }
     }
 
-    private final String CAT_FILTER_YES =
-            "FROM products p, categories c\n" +
-            "WHERE p.\"CategoryID\" = c.\"CategoryID\"\n" +
-            "AND c.\"Name\" = ?";
-
-    private final String CAT_FILTER_NO =
-            "FROM products p";
-
     private final String TOP_K = "ORDER BY totalprice desc, header, productprice desc, producttable.\"Name\"";
 
     private final String ALPHABETICAL = "ORDER BY header, totalprice desc, producttable.\"Name\", productprice desc";
 
-    private List<List<String>> createTempTable() {
-        String query = "drop table if exists precomp" +
+    private List<List<String>> createTempTable(int AccountID, String cat) {
+        String query = "drop table if exists precomp;\n" +
                 "create table precomp as" +
                 "(with overall_table as \n" +
                 "(select p.\"CategoryID\", pc.\"ProductID\",c.\"State\",sum(CAST(pc.\"Price\" as bigint)*pc.\"Quantity\") as amount  \n" +
@@ -418,33 +450,47 @@ public class Servlet extends HttpServlet {
                 "LEFT OUTER JOIN overall_table ot \n" +
                 "ON ( tp.\"ProductID\" = ot.\"ProductID\" and ts.\"State\" = ot.\"State\")\n" +
                 "inner join products pr ON tp.\"ProductID\" = pr.\"ProductID\"\n" +
-                "order by ts.state_order, tp.product_order)";
+                "order by ts.state_order, tp.product_order);\n" +
+                "delete * FROM active_users WHERE \"AccountID\" = ?";
         System.out.println(query);
-        List<List<String>> rValue = new ArrayList<>();
         try {
             PreparedStatement requestQuery = conn.prepareStatement(query);
+            requestQuery.setInt(1, AccountID);
             requestQuery.execute();
 
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
         }
-        return getPreCompValues();
+        return getPreCompValues(cat);
     }
 
-    private List<List<String>> getPreCompValues() {
+    private final String CAT_FILTER_YES =
+            ", categories c\n" +
+                    "WHERE precomp.\"CategoryID\" = c.\"CategoryID\"\n" +
+                    "AND c.\"Name\" = ?";
+
+    private List<List<String>> getPreCompValues(String cat) {
         List<List<String>> rValue = new ArrayList<>();
+        String catFilter = "";
+        if (!cat.equals("")) {
+            catFilter = CAT_FILTER_YES;
+        } else {
+            catFilter = "";
+        }
         try {
             PreparedStatement requestQuery;
             String query = "SELECT header, \"ProductID\", \"Name\", cell_sum, totalprice, productprice\n" +
                     "FROM (SELECT\n" +
                     "header, \"ProductID\", \"Name\", cell_sum, totalprice, productprice, row_number() over (partition by header order by productprice DESC)\n" +
-                    "FROM precomp\n" +
-                    "--Where \"CategoryID\" = ?\n" +
-                    "GROUP BY \"ProductID\", header, \"Name\", cell_sum, totalprice, productprice\n" +
+                    "FROM precomp\n" + catFilter +
+                    "\nGROUP BY \"ProductID\", header, \"Name\", cell_sum, totalprice, productprice\n" +
                     "ORDER BY totalprice DESC, header, productprice DESC) as subquery\n" +
                     "WHERE row_number <= 50";
             requestQuery = conn.prepareStatement(query);
+            if (!cat.equals("-1")) {
+                requestQuery.setString(1, cat);
+            }
             ResultSet rset = requestQuery.executeQuery();
             String tempState = "";
             List<String> tempArray = new ArrayList<>();
@@ -467,9 +513,9 @@ public class Servlet extends HttpServlet {
                     tempArray.add(tempState + " ($" + String.valueOf(rset.getLong("totalprice")) + ")");
                 }
                 if (firstTime) {
-                    firstTimeArray.add(rset.getString("Name") + " ($" + String.valueOf(rset.getLong("producttotal")) + ")");
+                    firstTimeArray.add(rset.getString("Name") + " ($" + String.valueOf(rset.getLong("productprice")) + ")");
                 }
-                tempArray.add(String.valueOf(rset.getLong("productprice")));
+                tempArray.add(String.valueOf(rset.getLong("cell_sum")));
             }
 
         } catch (Exception e) {
@@ -479,111 +525,18 @@ public class Servlet extends HttpServlet {
         return rValue;
     }
 
-    private List<List<String>> getGrid(boolean state, boolean topk, String category, int columnOffset, int rowOffset) {
-        String catFilter = "";
-        String query = "";
-        String orderBy = "";
-        if (category.equals("")) {
-            catFilter = CAT_FILTER_NO;
-        } else {
-            catFilter = CAT_FILTER_YES;
-        }
-        String order_by_name = "name, totalprice desc";
-        String order_by_price = "totalprice desc, name";
-        String orderview = "";
-        if (topk) {
-            orderBy = TOP_K;
-            orderview = order_by_price;
-        } else {
-            orderBy = ALPHABETICAL;
-            orderview = order_by_name;
-        }
-        PreparedStatement requestQuery;
-        List<List<String>> rValue = new ArrayList<>();
-        boolean firstTime = true;
-        System.out.println("CATEGORY: " + category);
-        query = "drop table if exists precomp" +
-                "create table precomp as" +
-                "(with overall_table as \n" +
-                "(select p.\"CategoryID\", pc.\"ProductID\",c.\"State\",sum(CAST(pc.\"Price\" as bigint)*pc.\"Quantity\") as amount  \n" +
-                "from order_history_products pc  \n" +
-                "inner join order_history sc on (sc.\"OrderHistoryID\" = pc.\"OrderHistoryID\")\n" +
-                "inner join products p on (pc.\"ProductID\" = p.\"ProductID\") -- add category filter if any\n" +
-                "inner join accounts c on (sc.\"AccountID\" = c.\"AccountID\")\n" +
-                "group by pc.\"ProductID\",c.\"State\", p.\"CategoryID\"\n" +
-                "),\n" +
-                "top_state as\n" +
-                "(select \"State\", sum(amount) as dollar from (\n" +
-                "select \"State\", amount from overall_table\n" +
-                "UNION ALL\n" +
-                "select name as \"State\", 0.0 as amount from states\n" +
-                ") as state_union\n" +
-                " group by \"State\" order by dollar desc limit 50\n" +
-                "),\n" +
-                "top_n_state as \n" +
-                "(select row_number() over(order by dollar desc) as state_order, \"State\", dollar from top_state\n" +
-                "),\n" +
-                "top_prod as \n" +
-                "(select \"ProductID\", \"CategoryID\", sum(amount) as dollar from (\n" +
-                "select \"ProductID\", \"CategoryID\", amount from overall_table\n" +
-                "UNION ALL\n" +
-                "select \"ProductID\", \"CategoryID\", 0.0 as amount from products\n" +
-                ") as product_union\n" +
-                "group by \"ProductID\", \"CategoryID\" order by dollar desc\n" +
-                "),\n" +
-                "top_n_prod as \n" +
-                "(select row_number() over(order by dollar desc) as product_order, \"ProductID\", \"CategoryID\", dollar from top_prod\n" +
-                ")\n" +
-                "select ts.\"State\" as header, tp.\"CategoryID\", tp.\"ProductID\", pr.\"Name\", COALESCE(ot.amount, 0.0) as cell_sum, ts.dollar as totalprice, tp.dollar as productprice\n" +
-                "from top_n_prod tp CROSS JOIN top_n_state ts \n" +
-                "LEFT OUTER JOIN overall_table ot \n" +
-                "ON ( tp.\"ProductID\" = ot.\"ProductID\" and ts.\"State\" = ot.\"State\")\n" +
-                "inner join products pr ON tp.\"ProductID\" = pr.\"ProductID\"\n" +
-                "order by ts.state_order, tp.product_order)";
-        System.out.println(query);
-
+    private void findLogs(int AccountID) {
+        String query = "Select * FROM sales_log WHERE \"AccountID\" = ?";
         try {
-            requestQuery = conn.prepareStatement(query);
-            /*if (!state) {
-                requestQuery.setInt(1, rowOffset);
-                if (category.equals("")) {
-                    requestQuery.setInt(2, columnOffset);
-                } else {
-                    requestQuery.setString(2, category);
-                    requestQuery.setInt(3, columnOffset);
-                }
-            }*/
-            rset = requestQuery.executeQuery();
-            String tempState = "";
-            List<String> tempArray = new ArrayList<>();
-            List<String> firstTimeArray = new ArrayList<>();
+            PreparedStatement requestQuery = conn.prepareStatement(query);
+            requestQuery.setInt(1, AccountID);
+            ResultSet rset = requestQuery.executeQuery();
             while (rset.next()) {
-                String rsetState = rset.getString("header");
-                if (!rsetState.equals(tempState)) {
-                    if (!tempArray.isEmpty()) {
-                        if (firstTime) {
-                            rValue.add(firstTimeArray);
-                            firstTime = false;
-                        }
-                        rValue.add(tempArray);
-                    } else if (firstTime) {
-                        firstTimeArray.add("");
-                    }
-                    tempState = rsetState;
-                    tempArray = new ArrayList<>();
-                    tempArray.add(tempState + " ($" + String.valueOf(rset.getLong("totalprice")) + ")");
-                }
-                if (firstTime) {
-                    firstTimeArray.add(rset.getString("Name") + " ($" + String.valueOf(rset.getLong("producttotal")) + ")");
-                }
-                tempArray.add(String.valueOf(rset.getLong("productprice")));
+
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return new ArrayList<>();
         }
-        return rValue;
-
     }
 
     private Boolean insertProduct(String name, String SKU, String price, int AccountID, Integer catID, PrintWriter out) {
@@ -592,7 +545,7 @@ public class Servlet extends HttpServlet {
                 return false;
             }
         } catch (Exception e) {
-            ////PrintStackTrace(e, out);
+            e.printStackTrace();
             return false;
         }
         String query = "Select * from public.products where \"SKU\" = ?;";
@@ -649,12 +602,12 @@ public class Servlet extends HttpServlet {
                 requestQuery.executeUpdate();
                 return true;
             } catch (Exception e) {
-                ////PrintStackTrace(e, out);
+                e.printStackTrace();
                 return false;
             }
 
         } catch (Exception e) {
-            ////PrintStackTrace(e, out);
+            e.printStackTrace();
             return false;
         }
 
@@ -688,7 +641,7 @@ public class Servlet extends HttpServlet {
             requestQuery.executeUpdate();
             return true;
         } catch (Exception e) {
-            ////PrintStackTrace(e, out);
+            e.printStackTrace();
             return false;
         }
     }
@@ -1174,7 +1127,7 @@ public class Servlet extends HttpServlet {
                 System.out.println(category);
                 System.out.println(next10);
                 System.out.println(next20);
-                List<List<String>> productList = createTempTable();
+                List<List<String>> productList = createTempTable(((int) request.getSession().getAttribute("AccountID")), category);
                 System.out.println(productList.toString());
 
                 if (category.equals("")) {
@@ -1226,7 +1179,7 @@ public class Servlet extends HttpServlet {
             out.print("<h1>Sign Up Successful!</h1>");
         } catch (Exception e) {
             out.print("<h1>Sign Up Failure!</h1>");
-            ////PrintStackTrace(e, out);
+            e.printStackTrace();
         }
     }
 
@@ -1250,12 +1203,17 @@ public class Servlet extends HttpServlet {
                 request.getSession().setAttribute("Role", rset.getString("Role"));
                 request.getSession().setAttribute("Username", rset.getString("Username"));
                 request.getSession().setAttribute("AccountID", rset.getInt("AccountID"));
+                query = "INSERT INTO public.active_users\n" +
+                        "(\"AccountID\")\n" +
+                        "VALUES (" + rset.getInt("AccountID") + ")";
+                Statement s = conn.createStatement();
+                s.execute(query);
                 request.getRequestDispatcher("/Servlet?func=home").forward(request, response);
                 out.print("<h1>Success! Found User: " + rset.getString("Username") + "</h1>");
             }
             out.print("<h1>Failure, no user found with that name!</h1>");
         } catch (Exception e) {
-            //printStackTrace(e, out);
+            e.printStackTrace();
             out.print("<h1>Failure, no user found with that name!</h1>");
         }
     }
