@@ -38,30 +38,46 @@
 
         function refreshGrid(){
             //Adjust url for jsp page, how will we show what rows aer updated?
-            //debugger;
+                                        
+            //Ajax call to refresh the grid, we pass a json object                                        
             $.get("/Servlet?func=refresh", function(responseJson) {
                 console.log( "Data loaded: " + responseJson );
-                
+                // debugger;
+
                 //Iterate on json
                 $.each(responseJson, function(index, obj) {
-                    console.log(obj["Type"]);
+                    // debugger;
+                    
                     var id = obj["State"] + obj["PID"];
-                                        
-                    if(obj["type"] == "p"){
-                        //Get the col number of the object that 
-                        var colNumber = $("#" + obj["id"]).parent().children().index($("#" + obj["id"]));
+                    var value = obj["Value"];
 
+                    if(obj["Type"] == "p"){
+                        //Get the col number of the object that 
+                        var colNumber = $("#" + id).parent().children().index($("#" + id));
                         $("tr td:nth-child(" + colNumber + ")").addClass("purple");
                     }
                     else{
                         //Just color the table cell
-                        $("#"+obj["id"]).addClass("red");
-                        $("#"+obj["id"]).text(obj["value"]);
+                        $("#" + id).addClass("red");
+                        $("#" + id).text(value);
                     }
                 });
             });
             
         }
+
+
+        function buyOrdersFastScript(){
+            //Adjust url for jsp page, how will we show what rows aer updated?
+            var numOrders = $("#numOrders").val();
+            //Ajax call to refresh the grid, we pass a json object
+
+            $.get("/Servlet?func=buyOrders&numOrders=" + numOrders, function(responseJson) {
+               
+            });
+            
+        }
+
 
         $(document).ready(function() {
             
@@ -136,12 +152,17 @@
     <button type="button" onclick="refreshGrid();" name="updateViewSettings" form="salesAnalyticsForm" >Refresh</button>
     <br/>
     <br/>
+    <%--Added to buy orders--%>
+    <button type="button" onclick="buyOrdersFastScript();" name="buyOrders">Buy Orders</button>
+    <input type="number" style="width:40px;" id="numOrders"/>
+    <br/>
+    <br/>
 
     <table class="displayTable" id="displayTable">
         <c:forEach items="${displayTableRows}" var="displayTable">
             <tr class="displayTable">
                 <c:forEach items="${displayTable}" var="columnVal">
-                    <td class="displayTable">${columnVal}</td>
+                    <td class="displayTable" id="${columnVal['id']}">${columnVal['value']}</td>
                 </c:forEach>
             </tr>
         </c:forEach>

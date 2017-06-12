@@ -93,7 +93,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
 
     @Override
     public void sessionDestroyed(HttpSessionEvent httpSessionEvent) {
-        try {
+        /*try {
             int AccountID = (int) httpSessionEvent.getSession().getAttribute("AccountID");
             String query = "DELETE * FROM public.sales_log WHERE \"AccountID\" = ?;" +
                     "DELETE * FROM public.active_users WHERE \"AccountID\" = ?";
@@ -103,7 +103,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             delete.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     private ResultSet selectCategoryForID(String ID) {
@@ -222,12 +222,12 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
 
     private Boolean productDelete(int prodID, PrintWriter out) {
         try {
-            String query = "Delete from public.Products where \"ProductID\" = ?;\n" +
+            String query = "Delete from public.Products where \"ProductID\" = ?;\n";/* +
                     "INSERT INTO public.sales_log(\n" +
                     "\"PID\", \"State\", \"AccountID\", \"ChangeType\")\n" +
                     "Select ?, a.\"State\", au.\"AccountID\", CAST('p' as text) as \"ChangeType\"\n" +
                     "FROM accounts a, active_users au\n" +
-                    "WHERE a.\"AccountID\" = au.\"AccountID\"";
+                    "WHERE a.\"AccountID\" = au.\"AccountID\"";*/
             PreparedStatement requestQuery;
             try {
                 requestQuery = conn.prepareStatement(query);
@@ -279,14 +279,14 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             requestQuery.setString(3, price);
             requestQuery.setInt(4, prodID);
             requestQuery.executeUpdate();
-            String query2 = "INSERT INTO public.sales_log(\n" +
+            /*String query2 = "INSERT INTO public.sales_log(\n" +
                     "\"PID\", \"State\", \"AccountID\", \"ChangeType\")\n" +
                     "Select ?, a.\"State\", au.\"AccountID\", CAST('p' as text) as \"ChangeType\"\n" +
                     "FROM accounts a, active_users au\n" +
                     "WHERE a.\"AccountID\" = au.\"AccountID\"";
             requestQuery = conn.prepareStatement(query2);
             requestQuery.setInt(1, prodID);
-            requestQuery.executeUpdate();
+            requestQuery.executeUpdate();*/
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -363,14 +363,14 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                     requestQuery.setInt(3, quantity[i]);
                     requestQuery.setInt(4, prices[i]);
                     requestQuery.executeUpdate();
-                    String query2 = "INSERT INTO public.sales_log(\n" +
+                    /*String query2 = "INSERT INTO public.sales_log(\n" +
                             "\"PID\", \"Price\", \"State\", \"AccountID\", \"ChangeType\")\n" +
                             "Select ?, ?, a.\"State\", au.\"AccountID\", CAST('r' as text) as \"ChangeType\"\n" +
                             "FROM accounts a, active_users au\n" +
                             "WHERE a.\"AccountID\" = au.\"AccountID\"\n";
                     requestQuery = conn.prepareStatement(query2);
                     requestQuery.setInt(1, productIDs[i]);
-                    requestQuery.setString(2, String.valueOf(prices[i]));
+                    requestQuery.setString(2, String.valueOf(prices[i]));*/
                 }
             } else {
                 throw new Exception("no orders found");
@@ -454,7 +454,6 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 "ON ( tp.\"ProductID\" = ot.\"ProductID\" and ts.\"State\" = ot.\"State\")\n" +
                 "inner join products pr ON tp.\"ProductID\" = pr.\"ProductID\"\n" +
                 "order by ts.state_order, tp.product_order);\n" +
-                "delete * FROM active_users WHERE \"AccountID\" = ?;\n" +
                 "CREATE TABLE public.sales_log\n" +
                 "(\n" +
                 "\"SLID\" serial NOT NULL,\n" +
@@ -467,7 +466,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
         System.out.println(query);
         try {
             PreparedStatement requestQuery = conn.prepareStatement(query);
-            requestQuery.setInt(1, AccountID);
+            //requestQuery.setInt(1, AccountID);
             requestQuery.execute();
 
         } catch (Exception e) {
@@ -594,8 +593,8 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                     "WHERE precomp.\"CategoryID\" = c.\"CategoryID\"\n" +
                     "AND c.\"Name\" = ?";
 
-    private List<List<String>> getPreCompValues(String cat) {
-        List<List<String>> rValue = new ArrayList<>();
+    private List<List<Map<String, String>>> getPreCompValues(String cat) {
+        List<List<Map<String, String>>> rValue = new ArrayList<>();
         String catFilter = "";
         if (!cat.equals("")) {
             catFilter = CAT_FILTER_YES;
@@ -612,13 +611,13 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                     "ORDER BY totalprice DESC, header, productprice DESC) as subquery\n" +
                     "WHERE row_number <= 50";
             requestQuery = conn.prepareStatement(query);
-            if (!cat.equals("-1")) {
+            if (!cat.equals("")) {
                 requestQuery.setString(1, cat);
             }
             ResultSet rset = requestQuery.executeQuery();
             String tempState = "";
-            List<String> tempArray = new ArrayList<>();
-            List<String> firstTimeArray = new ArrayList<>();
+            List<Map<String, String>> tempArray = new ArrayList<>();
+            List<Map<String, String>> firstTimeArray = new ArrayList<>();
             boolean firstTime = true;
             while (rset.next()) {
                 String rsetState = rset.getString("header");
@@ -781,11 +780,13 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (request.getParameter("func").equals("refresh")) {
-            JSONArray responseValue = findLogs((int) request.getSession().getAttribute("AccountID"));
-
+            //JSONArray responseValue = findLogs((int) request.getSession().getAttribute("AccountID"));
+            JSONArray rValue = new JSONArray();
+            JSONObject rObject = new JSONObject().put("type", "r").put("Value", 1234).put("State", "California").put("PID", 811);
+            rValue.put(rObject);
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(responseValue.toString());
+            response.getWriter().write(rValue.toString());
             // findLogs((int) request.getSession().getAttribute("AccountID"));
         } else {
             doPost(request, response);
@@ -1345,11 +1346,6 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 request.getSession().setAttribute("Role", rset.getString("Role"));
                 request.getSession().setAttribute("Username", rset.getString("Username"));
                 request.getSession().setAttribute("AccountID", rset.getInt("AccountID"));
-                query = "INSERT INTO public.active_users\n" +
-                        "(\"AccountID\")\n" +
-                        "VALUES (" + rset.getInt("AccountID") + ")";
-                Statement s = conn.createStatement();
-                s.execute(query);
                 request.getRequestDispatcher("/Servlet?func=home").forward(request, response);
                 out.print("<h1>Success! Found User: " + rset.getString("Username") + "</h1>");
             }
