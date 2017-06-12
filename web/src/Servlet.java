@@ -2,6 +2,8 @@
  * Created by John on 4/29/2017.
  */
 
+import org.json.JSONObject;
+
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
@@ -10,6 +12,7 @@ import java.io.PrintWriter;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
+import org.json.*;
 
 public class Servlet extends HttpServlet implements HttpSessionListener {
     private static Connection conn = null;
@@ -413,7 +416,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
     private final String ALPHABETICAL = "ORDER BY header, totalprice desc, producttable.\"Name\", productprice desc";
 
     private List<List<String>> createTempTable(int AccountID, String cat) {
-        String query = "drop table if exists precomp;\n" +
+        String query = "drop table if exists precomp; drop table if exists sales_log;\n" +
                 "create table precomp as" +
                 "(with overall_table as \n" +
                 "(select p.\"CategoryID\", pc.\"ProductID\",c.\"State\",sum(CAST(pc.\"Price\" as bigint)*pc.\"Quantity\") as amount  \n" +
@@ -451,7 +454,16 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 "ON ( tp.\"ProductID\" = ot.\"ProductID\" and ts.\"State\" = ot.\"State\")\n" +
                 "inner join products pr ON tp.\"ProductID\" = pr.\"ProductID\"\n" +
                 "order by ts.state_order, tp.product_order);\n" +
-                "delete * FROM active_users WHERE \"AccountID\" = ?";
+                "delete * FROM active_users WHERE \"AccountID\" = ?;\n" +
+                "CREATE TABLE public.sales_log\n" +
+                "(\n" +
+                "\"SLID\" serial NOT NULL,\n" +
+                "\"PID\" bigint NOT NULL,\n" +
+                "\"Price\" text,\n" +
+                "\"State\" text,\n" +
+                "\"AccountID\" INTEGER NOT NULL,\n" +
+                "PRIMARY KEY (\"SLID\")\n" +
+                ")";
         System.out.println(query);
         try {
             PreparedStatement requestQuery = conn.prepareStatement(query);
@@ -463,6 +475,118 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             return new ArrayList<>();
         }
         return getPreCompValues(cat);
+    }
+
+    private void buyProducts(int orders) {
+        String INSERT_SHOPPING_CART = "INSERT INTO order_history(\"AccountID\", \"TotalPrice\", \"Date\") VALUES(?, ?, ?) ";
+        String INSERT_PRODUCTS_IN_CART = "INSERT INTO order_history_products(\"OrderHistoryID\", \"ProductID\", \"Price\", \"Quantity\") VALUES(?, ?, ?, ?)";
+        String GET_RANDOM_PERSON = "SELECT \"AccountID\" FROM accounts OFFSET floor(random()* (select count(*) from accounts)) LIMIT 1";
+        String GET_RANDOM_5_PRODUCTS = "SELECT \"ProductID\", CAST(\"Price\" as bigint) FROM products OFFSET floor(random()* (select count(*) from products)) LIMIT 5";
+        Random rand = new Random();
+        int batchSize = 10000;
+        int personId = 0;
+        int noOfRows = 0;
+        int productId = 0;
+        int productPrice = 0;
+        int quantity = 0;
+        PreparedStatement shoppingCartPtst = null, productsCartPtst  = null;
+        Statement personSt = null, productSt = null;
+        ArrayList<Integer> cartIds = new ArrayList<Integer>();
+        try {
+            shoppingCartPtst = conn.prepareStatement(INSERT_SHOPPING_CART, Statement.RETURN_GENERATED_KEYS);
+            productsCartPtst = conn.prepareStatement(INSERT_PRODUCTS_IN_CART);
+            personSt = conn.createStatement();
+            productSt = conn.createStatement();
+
+            for(int i=0;i<orders;i++) {
+                ResultSet personRs = personSt.executeQuery(GET_RANDOM_PERSON);
+                if(personRs.next()) {
+                    personId = personRs.getInt("id");
+                }
+                personRs.close();
+
+                shoppingCartPtst.setInt(1, personId);
+                shoppingCartPtst.setBoolean(2, true);
+                shoppingCartPtst.setString(3, "Buy N Orders Generated");
+
+                shoppingCartPtst.addBatch();
+                noOfRows++;
+
+                if(noOfRows % batchSize == 0) {
+                    shoppingCartPtst.executeBatch();
+                    ResultSet cartRs = shoppingCartPtst.getGeneratedKeys();
+                    while(cartRs.next()) {
+                        cartIds.add(cartRs.getInt(1));
+                    }
+                    cartRs.close();
+                }
+
+            }
+            shoppingCartPtst.executeBatch();
+            ResultSet cartRs = shoppingCartPtst.getGeneratedKeys();
+            while(cartRs.next()) {
+                cartIds.add(cartRs.getInt(1));
+            }
+            cartRs.close();
+            shoppingCartPtst.close();
+
+            int totalRows = 0;
+            for(int i=0;i<orders;i++) {
+                ResultSet productRs = productSt.executeQuery(GET_RANDOM_5_PRODUCTS);
+                int shoppingCartPrice = 0;
+                while(productRs.next()) {
+                    productsCartPtst.setInt(1, cartIds.get(i));
+                    productId = productRs.getInt("id");
+                    productsCartPtst.setInt(2, productId);
+                    int tempPrice = productRs.getInt("price");
+                    productPrice = productRs.getInt("price");
+                    productsCartPtst.setInt(3, productPrice);
+                    quantity = rand.nextInt(10)+1;
+                    productsCartPtst.setInt(4, quantity);
+                    shoppingCartPrice += quantity * tempPrice;
+
+                    productsCartPtst.addBatch();
+                    totalRows++;
+
+                    if(totalRows % batchSize == 0) {
+                        productsCartPtst.executeBatch();
+                    }
+                }
+                productsCartPtst.executeBatch();
+                String query = "UPDATE order_history\n" +
+                        "Set \"TotalPrice\" = ?\n" +
+                        "WHERE \"OrderHistoryID\" = ?";
+                PreparedStatement UpdateStatement = conn.prepareStatement(query);
+                UpdateStatement.setString(1, String.valueOf(shoppingCartPrice));
+                UpdateStatement.setInt(2, cartIds.get(i));
+                UpdateStatement.executeUpdate();
+            }
+            conn.commit();
+        } catch(Exception e) {
+            try {
+                conn.rollback();
+            } catch (Exception err) {
+                err.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                if(shoppingCartPtst != null) {
+                    shoppingCartPtst.close();
+                }
+                if(productsCartPtst != null) {
+                    productsCartPtst.close();
+                }
+                if(personSt != null) {
+                    personSt.close();
+                }
+                if(productSt != null) {
+                    productSt.close();
+                }
+            } catch(Exception e1) {
+                e1.getStackTrace();
+            }
+        }
     }
 
     private final String CAT_FILTER_YES =
@@ -525,18 +649,27 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
         return rValue;
     }
 
-    private void findLogs(int AccountID) {
-        String query = "Select * FROM sales_log WHERE \"AccountID\" = ?";
+    private JSONArray findLogs(int AccountID) {
+        String query = "Select p.\"ProductID\", p.\"Name\", \"State\", SUM(coalesce(CAST(s.\"Price\" as bigint), 0)) as price, \"ChangeType\" FROM sales_log s, products p WHERE \"AccountID\" = ? AND s.\"ProductID\" = p.\"ProductID\"";
+        JSONArray rArray = new JSONArray();
         try {
             PreparedStatement requestQuery = conn.prepareStatement(query);
             requestQuery.setInt(1, AccountID);
             ResultSet rset = requestQuery.executeQuery();
             while (rset.next()) {
-
+                JSONObject tempObj = new JSONObject();
+                tempObj.put("type", rset.getString("ChangeType"));
+                tempObj.put("State", rset.getString("State"));
+                tempObj.put("Product", rset.getString("Name"));
+                tempObj.put("Price", rset.getInt("price"));
+                tempObj.put("id", rset.getInt("ProductID"));
+                rArray.put(tempObj);
             }
         } catch (Exception e) {
             e.printStackTrace();
+            return rArray;
         }
+        return rArray;
     }
 
     private Boolean insertProduct(String name, String SKU, String price, int AccountID, Integer catID, PrintWriter out) {
@@ -647,7 +780,16 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
     }
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        doPost(request, response);
+        if (request.getParameter("func").equals("refresh")) {
+            JSONArray responseValue = findLogs((int) request.getSession().getAttribute("AccountID"));
+
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(responseValue.toString());
+            // findLogs((int) request.getSession().getAttribute("AccountID"));
+        } else {
+            doPost(request, response);
+        }
     }
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

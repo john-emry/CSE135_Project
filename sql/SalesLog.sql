@@ -5,7 +5,7 @@ CREATE TABLE public.sales_log
     "PID" bigint NOT NULL,
     "Price" text,
     "State" text,
-    "AccountID" text NOT NULL,
+    "AccountID" INTEGER NOT NULL,
     "ChangeType" text NOT NULL,
     PRIMARY KEY ("SLID")
 )
