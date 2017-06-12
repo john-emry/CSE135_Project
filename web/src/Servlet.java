@@ -282,8 +282,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             /*String query2 = "INSERT INTO public.sales_log(\n" +
                     "\"PID\", \"State\", \"AccountID\", \"ChangeType\")\n" +
                     "Select ?, a.\"State\", au.\"AccountID\", CAST('p' as text) as \"ChangeType\"\n" +
-                    "FROM accounts a, active_users au\n" +
-                    "WHERE a.\"AccountID\" = au.\"AccountID\"";
+                    "FROM accounts a\n"
             requestQuery = conn.prepareStatement(query2);
             requestQuery.setInt(1, prodID);
             requestQuery.executeUpdate();*/
@@ -559,6 +558,14 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 UpdateStatement.setInt(2, cartIds.get(i));
                 UpdateStatement.executeUpdate();
             }
+            String query2 = "INSERT INTO public.sales_log(\n" +
+                    "\"PID\", \"State\", \"AccountID\", \"ChangeType\")\n" +
+                    "select \"State\", a.\"AccountID\", \"ProductID\" as \"PID\", 'r' as \"ChangeType\"\n" +
+                    "from (select \"TotalPrice\", \"AccountID\", \"ProductID\", \"Quantity\", \"Price\" from\n" +
+                    "order_history oh inner join order_history_products ohp on oh.\"OrderHistoryID\" = ohp.\"OrderHistoryID\") totals\n" +
+                    "inner join accounts a on totals.\"AccountID\" = a.\"AccountID\"";
+            PreparedStatement requestQuery = conn.prepareStatement(query2);
+            requestQuery.executeUpdate();
             conn.commit();
         } catch(Exception e) {
             try {
