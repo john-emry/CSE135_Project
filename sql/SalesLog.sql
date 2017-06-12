@@ -23,7 +23,7 @@ CREATE INDEX sales_log_productid ON sales_log ("PID");
 
 --Insert script 
 INSERT INTO public.sales_log(
-	"SLID", "PID", "Price", "Viewed", "State", "AccountID", "ChangeType")
+	"SLID", "PID", "Price", "State", "AccountID", "ChangeType")
 	VALUES (?, ?, ?, ?, ?, ?, ?);
 
 
