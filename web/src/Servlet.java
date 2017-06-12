@@ -801,6 +801,8 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write(rValue.toString());
             // findLogs((int) request.getSession().getAttribute("AccountID"));
+        } else if (request.getParameter("func").equals("buyOrders")) {
+            buyProducts( Integer.valueOf(request.getParameter("numOrders")));
         } else {
             doPost(request, response);
         }
