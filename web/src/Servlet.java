@@ -500,13 +500,13 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             for(int i=0;i<orders;i++) {
                 ResultSet personRs = personSt.executeQuery(GET_RANDOM_PERSON);
                 if(personRs.next()) {
-                    personId = personRs.getInt("id");
+                    personId = personRs.getInt("AccountID");
                 }
                 personRs.close();
 
                 shoppingCartPtst.setInt(1, personId);
-                shoppingCartPtst.setBoolean(2, true);
-                shoppingCartPtst.setString(3, "Buy N Orders Generated");
+                shoppingCartPtst.setString(2, "0");
+                shoppingCartPtst.setDate(3, new java.sql.Date(System.currentTimeMillis()));
 
                 shoppingCartPtst.addBatch();
                 noOfRows++;
@@ -535,14 +535,13 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 int shoppingCartPrice = 0;
                 while(productRs.next()) {
                     productsCartPtst.setInt(1, cartIds.get(i));
-                    productId = productRs.getInt("id");
+                    productId = productRs.getInt("ProductID");
                     productsCartPtst.setInt(2, productId);
-                    int tempPrice = productRs.getInt("price");
-                    productPrice = productRs.getInt("price");
+                    productPrice = Integer.valueOf(productRs.getString("Price"));
                     productsCartPtst.setInt(3, productPrice);
                     quantity = rand.nextInt(10)+1;
                     productsCartPtst.setInt(4, quantity);
-                    shoppingCartPrice += quantity * tempPrice;
+                    shoppingCartPrice += quantity * productPrice;
 
                     productsCartPtst.addBatch();
                     totalRows++;
@@ -802,6 +801,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             response.getWriter().write(rValue.toString());
             // findLogs((int) request.getSession().getAttribute("AccountID"));
         } else if (request.getParameter("func").equals("buyOrders")) {
+            System.out.println("BUYING");
             buyProducts( Integer.valueOf(request.getParameter("numOrders")));
         } else {
             doPost(request, response);
