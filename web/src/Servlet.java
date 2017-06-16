@@ -80,6 +80,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             String dbURL = "jdbc:postgresql:CSE135?user=snap&password=";
             conn = DriverManager.getConnection(dbURL);
             System.out.println("Connected to CSE135");
+            super.init();
         } catch (Exception e) {
             e.printStackTrace();
             error = e.toString();
@@ -422,6 +423,15 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
     private final String ALPHABETICAL = "ORDER BY header, totalprice desc, producttable.\"Name\", productprice desc";
 
     private List<List<Map<String, String>>> createTempTable(int AccountID, String cat) {
+        String queryLogs = "select count(*) from sales_log";
+
+        String tableExists = "SELECT EXISTS (\n" +
+                "   SELECT 1\n" +
+                "   FROM   information_schema.tables \n" +
+                "   WHERE  table_schema = 'public'\n" +
+                "   AND    table_name = 'precomp'\n" +
+                "   );";
+
         String query = "drop table if exists precomp;\n" +
                 "create table precomp as" +
                 "(with overall_table as \n" +
@@ -462,6 +472,17 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 "order by ts.state_order, tp.product_order);";
         System.out.println(query);
         try {
+            Statement statement = conn.createStatement();
+            ResultSet rset1 = statement.executeQuery(tableExists);
+            if (rset1.next()) {
+                if (rset1.getBoolean("exists")) {
+                    ResultSet rset = statement.executeQuery(queryLogs);
+                    if (rset == null || !rset.next()) {
+                        return getPreCompValues(cat);
+                    }
+                }
+            }
+
             PreparedStatement requestQuery = conn.prepareStatement(query);
             //requestQuery.setInt(1, AccountID);
             requestQuery.execute();
@@ -493,6 +514,12 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             conn.setAutoCommit(false);
             shoppingCartPtst = conn.prepareStatement(INSERT_SHOPPING_CART, Statement.RETURN_GENERATED_KEYS);
             productsCartPtst = conn.prepareStatement(INSERT_PRODUCTS_IN_CART);
+            String query2 = "insert into sales_log\n" +
+                    "(\"Timestamp\", \"PID\", \"State\", \"Price\", \"ChangeType\")\n" +
+                    "select now(), ?, a.\"State\", ?, 'r'\n" +
+                    "from accounts a, order_history oh\n" +
+                    "where oh.\"OrderHistoryID\" = ? and a.\"AccountID\" = oh.\"AccountID\"";
+            PreparedStatement requestQuery = conn.prepareStatement(query2);
             personSt = conn.createStatement();
             productSt = conn.createStatement();
 
@@ -543,13 +570,21 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                     shoppingCartPrice += quantity * productPrice;
 
                     productsCartPtst.addBatch();
+
+                    requestQuery.setInt(1, productId);
+                    requestQuery.setString(2, String.valueOf(productPrice*quantity));
+                    requestQuery.setInt(3, cartIds.get(i));
+                    requestQuery.addBatch();
+
                     totalRows++;
 
                     if(totalRows % batchSize == 0) {
                         productsCartPtst.executeBatch();
+                        requestQuery.executeBatch();
                     }
                 }
                 productsCartPtst.executeBatch();
+                requestQuery.executeBatch();
                 String query = "UPDATE order_history\n" +
                         "Set \"TotalPrice\" = ?\n" +
                         "WHERE \"OrderHistoryID\" = ?";
@@ -557,16 +592,8 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 UpdateStatement.setString(1, String.valueOf(shoppingCartPrice));
                 UpdateStatement.setInt(2, cartIds.get(i));
                 UpdateStatement.executeUpdate();
+
             }
-            String query2 = "INSERT INTO public.sales_log(\n" +
-                    "\"PID\", \"State\", \"Price\", \"Timestamp\", \"ChangeType\")\n" +
-                    "select \"ProductID\" as \"PID\",\"State\", \"Quantity\"*Cast(\"Price\" as bigint) as \"Price\", CURRENT_TIMESTAMP, 'r'\n" +
-                    "from (select \"TotalPrice\", \"AccountID\", \"ProductID\", \"Quantity\", \"Price\" from\n" +
-                    "order_history oh inner join order_history_products ohp on oh.\"OrderHistoryID\" = ohp.\"OrderHistoryID\") totals\n" +
-                    "inner join accounts a on totals.\"AccountID\" = a.\"AccountID\"";
-            PreparedStatement requestQuery = conn.prepareStatement(query2);
-            requestQuery.executeUpdate();
-            conn.commit();
             conn.setAutoCommit(true);
         } catch(Exception e) {
             try {
@@ -612,9 +639,9 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             PreparedStatement requestQuery;
             String query = "SELECT header, \"ProductID\", \"Name\", cell_sum, totalprice, productprice\n" +
                     "FROM (SELECT\n" +
-                    "header, \"ProductID\", \"Name\", cell_sum, totalprice, productprice, row_number() over (partition by header order by productprice DESC)\n" +
+                    "header, \"ProductID\", precomp.\"Name\", cell_sum, totalprice, productprice, row_number() over (partition by header order by productprice DESC)\n" +
                     "FROM precomp\n" + catFilter +
-                    "\nGROUP BY \"ProductID\", header, \"Name\", cell_sum, totalprice, productprice\n" +
+                    "\nGROUP BY \"ProductID\", header, precomp.\"Name\", cell_sum, totalprice, productprice\n" +
                     "ORDER BY totalprice DESC, header, productprice DESC) as subquery\n" +
                     "WHERE row_number <= 50";
             requestQuery = conn.prepareStatement(query);
@@ -804,10 +831,15 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
         if (request.getParameter("func").equals("refresh")) {
             System.out.println(request.getParameter("date"));
             //JSONArray responseValue = findLogs((int) request.getSession().getAttribute("AccountID"));
+            JSONObject rObject = new JSONObject();
             JSONArray rValue = findLogs(Long.valueOf(request.getParameter("date")));
+            rObject.put("grid", rValue);
+            JSONArray refreshArray = loadArray();
+            System.out.println(refreshArray.toString());
+            rObject.put("top", refreshArray.toString());
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(rValue.toString());
+            response.getWriter().write(rObject.toString());
             // findLogs((int) request.getSession().getAttribute("AccountID"));
         } else if (request.getParameter("func").equals("buyOrders")) {
             System.out.println("BUYING");
@@ -820,6 +852,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("text/html");
         PrintWriter out = response.getWriter();
+        RequestDispatcher dispatcher = null;
         switch(request.getParameter("func")) {
             case "NotLoggedIn":
                 out.println("<h1>Only Those Logged In May See This Page</h1>");
@@ -1042,9 +1075,16 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                     request.setAttribute("productList", productSelect(Integer.valueOf(request.getParameter("Category")),
                             Integer.valueOf(request.getSession().getAttribute("AccountID").toString()), searchCriteria));
                 }
+                try {
 
-                RequestDispatcher dispatcher = request.getRequestDispatcher("Products.jsp");
-                dispatcher.forward(request, response);
+                    dispatcher = getServletContext().getRequestDispatcher("/Products.jsp");
+                    System.out.println(dispatcher);
+                    System.out.println(request);
+                    System.out.println(response);
+                    dispatcher.forward(request, response);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 break;
             case "ProductsBrowsing":
 
@@ -1303,6 +1343,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
 
                 request.setAttribute("displayTableRows", productList);
                 request.setAttribute("custOrState", rowSelect + "s");
+                request.setAttribute("loadArray", loadArray().toString());
                 request.getSession().setAttribute("row", rowSelect);
                 request.getSession().setAttribute("order", orderSelect);
                 request.getSession().setAttribute("category", category);
@@ -1317,6 +1358,27 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
             default:
                 break;
         }
+    }
+
+    private JSONArray loadArray() {
+        String query = "select \"ProductID\", sum(CAST(\"Price\" as bigint) * \"Quantity\") as price\n" +
+                "from order_history_products\n" +
+                "group by \"ProductID\"\n" +
+                "order by price desc\n" +
+                "Limit 50";
+        JSONArray rArray = new JSONArray();
+        try {
+            Statement s = conn.createStatement();
+            ResultSet rset = s.executeQuery(query);
+            while (rset.next()) {
+                rArray.put(rset.getString("ProductID"));
+            }
+            return rArray;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return rArray;
+        }
+
     }
 
     private void signup(String user, String role, String age, String state, PrintWriter out) {

@@ -74,28 +74,28 @@
         <tr>
             <td>Current Category <%= request.getAttribute("currentCategory") %>  </td>
         </tr>
-        <!--Suppose ${list} points to a List<Object>, then the following-->
+        <!--Suppose  points to a List<Object>, then the following-->
         <tr>
             <td>Product List</td>
         </tr>
-        <tr>
-            <%
-                try {
-                    String s = request.getAttribute("errorMessage").toString();
-                    if (s != null && !s.equals("")) {
-                        out.println(s);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            %>
-        </tr>
+        <%--<tr>--%>
+            <%--<%--%>
+                <%--try {--%>
+                    <%--String s = request.getAttribute("errorMessage").toString();--%>
+                    <%--if (s != null && !s.equals("")) {--%>
+                        <%--out.println(s);--%>
+                    <%--}--%>
+                <%--} catch (Exception e) {--%>
+                    <%--e.printStackTrace();--%>
+                <%--}--%>
+            <%--%>--%>
+        <%--</tr>--%>
         <c:forEach items="${productList}" var="product">
             <tr>
-                <td>SKU:&nbsp;<input type="text" name="productSKU" value="${product['sku']}"/>Name:&nbsp;<input type="text" name="productName" value="${product['name']}"/> Price:&nbsp;<input type="text" name="productPrice" value="${product['price']}"/> <button type="submit" value="${product['productID']}" name="ProductUpdate" form="searchAndUpdate" >Update</button><button type="submit" value="${product.productID}" name="ProductDelete" form="searchAndUpdate" >Delete</button></td>
+                <td>SKU:&nbsp;<input type="text" name="productSKU" value="${product['sku']}"/>Name:&nbsp;<input type="text" name="productName" value="${product['name']}"/> Price:&nbsp;<input type="text" name="productPrice" value="${product['price']}"/> <button type="submit" value="${product['productID']}" name="ProductUpdate" form="searchAndUpdate" >Update</button><button type="submit" value="${product['productID']}" name="ProductDelete" form="searchAndUpdate" >Delete</button></td>
             </tr>
         </c:forEach>
-        
+
     </table>
     </form>
     <%--Start product add--%>

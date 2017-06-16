@@ -35,17 +35,22 @@
     <script type="text/javascript">
 
         var date = new Date();
+        var productIDArr = new Array();
+        var refreshIDArr = new Array();
+        productIDArr = <%= request.getAttribute("loadArray")%>;
+//        console.log(productIDArr);
 
         function refreshGrid(){
             //Adjust url for jsp page, how will we show what rows aer updated?
                                         
             //Ajax call to refresh the grid, we pass a json object                                        
             $.get("/Servlet?func=refresh&date=" + date.getTime().toString(), function(responseJson) {
-                console.log( "Data loaded: " + responseJson );
+//                console.log( "Data loaded: " + responseJson );
                 // debugger;
-
+                refreshIDArr = JSON.parse(responseJson["top"]);
+                console.log(responseJson);
                 //Iterate on json
-                $.each(responseJson, function(index, obj) {
+                $.each(responseJson["grid"], function(index, obj) {
                     // debugger;
                     
                     var id = obj["State"] + obj["PID"];
@@ -53,16 +58,42 @@
 
                     if(obj["Type"] == "p"){
                         //Get the col number of the object that 
-                        var colNumber = $("#" + id).parent().children().index($("#" + id));
+                        var colNumber = $("#" + id).parent().children().index($("#" + id)) + 1;
                         $("tr td:nth-child(" + colNumber + ")").addClass("purple");
+                        $("tr td:nth-child(" + colNumber + ")").removeClass("red");
+
                     }
                     else{
                         //Just color the table cell
                         $("#" + id).addClass("red");
-                        $("#" + id).text(value);
+                        var valToAdd = parseInt($("#" + id).text());
+                        var valToAdd2 = parseInt(value);
+                        var newVal = valToAdd + valToAdd2;
+                        $("#" + id).text(newVal);
                     }
                 });
+                //Iterate over the current product id array, if the id is not found in the new top
+                // 50, make that column purple.
+                var index = 0;
+                console.log(productIDArr);
+                console.log(refreshIDArr);
+                if(refreshIDArr.length > 0) {
+                    for (index = 0; index < productIDArr.length; ++index) {
+                        var val = productIDArr[index];
+
+                        if ($.inArray(val, refreshIDArr) == -1) {
+                            console.log("Make purple: " + val);
+                            var colNumber = $("#" + val).parent().children().index($("#" + val)) + 1;
+                            $("tr td:nth-child(" + colNumber + ")").addClass("purple");
+                            $("tr td:nth-child(" + colNumber + ")").removeClass("red");
+                            //make purple, we have found a product that is no longer in the top 50
+                            //remove red, add purple
+                        }
+                    }
+                }
+
             });
+
             date = new Date();
             
         }
@@ -164,7 +195,7 @@
         <c:forEach items="${displayTableRows}" var="displayTable">
             <tr class="displayTable">
                 <c:forEach items="${displayTable}" var="columnVal">
-                    <td class="displayTable" id="${columnVal['id']}">${columnVal['value']}</td>
+                    <td class="displayTable" id="${columnVal['id']}" value="${columnVal['value']}"}">${columnVal['value']}</td>
                 </c:forEach>
             </tr>
         </c:forEach>
