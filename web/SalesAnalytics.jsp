@@ -34,13 +34,13 @@
     </style>
     <script type="text/javascript">
 
-        var jsonGrid = JSON.parse('{}');
+        var date = new Date();
 
         function refreshGrid(){
             //Adjust url for jsp page, how will we show what rows aer updated?
                                         
             //Ajax call to refresh the grid, we pass a json object                                        
-            $.get("/Servlet?func=refresh", function(responseJson) {
+            $.get("/Servlet?func=refresh&date=" + date.getTime().toString(), function(responseJson) {
                 console.log( "Data loaded: " + responseJson );
                 // debugger;
 
@@ -63,6 +63,7 @@
                     }
                 });
             });
+            date = new Date();
             
         }
 
@@ -80,7 +81,8 @@
 
 
         $(document).ready(function() {
-            
+
+            date = new Date();
             //Bold first col of the display table
             $("#displayTable").find("td:first-child").css("font-weight", "bold");
             //Bold the first row (col headers)

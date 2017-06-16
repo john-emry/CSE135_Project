@@ -234,6 +234,13 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 requestQuery.setInt(1, prodID);
                 requestQuery.setInt(2, prodID);
                 requestQuery.executeUpdate();
+                query = "insert into sales_log\n" +
+                        "(\"Timestamp\", \"PID\", \"ChangeType\")\n" +
+                        "VALUES(now(), ?, 'p')";
+                requestQuery = conn.prepareStatement(query);
+                requestQuery.setInt(1, prodID);
+                requestQuery.executeUpdate();
+
                 return true;
             } catch (Exception e) {
                 return false;
@@ -415,7 +422,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
     private final String ALPHABETICAL = "ORDER BY header, totalprice desc, producttable.\"Name\", productprice desc";
 
     private List<List<Map<String, String>>> createTempTable(int AccountID, String cat) {
-        String query = "drop table if exists precomp; drop table if exists sales_log;\n" +
+        String query = "drop table if exists precomp;\n" +
                 "create table precomp as" +
                 "(with overall_table as \n" +
                 "(select p.\"CategoryID\", pc.\"ProductID\",c.\"State\",sum(CAST(pc.\"Price\" as bigint)*pc.\"Quantity\") as amount  \n" +
@@ -452,16 +459,7 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 "LEFT OUTER JOIN overall_table ot \n" +
                 "ON ( tp.\"ProductID\" = ot.\"ProductID\" and ts.\"State\" = ot.\"State\")\n" +
                 "inner join products pr ON tp.\"ProductID\" = pr.\"ProductID\"\n" +
-                "order by ts.state_order, tp.product_order);\n" +
-                "CREATE TABLE public.sales_log\n" +
-                "(\n" +
-                "\"SLID\" serial NOT NULL,\n" +
-                "\"PID\" bigint NOT NULL,\n" +
-                "\"Price\" text,\n" +
-                "\"State\" text,\n" +
-                "\"AccountID\" INTEGER NOT NULL,\n" +
-                "PRIMARY KEY (\"SLID\")\n" +
-                ")";
+                "order by ts.state_order, tp.product_order);";
         System.out.println(query);
         try {
             PreparedStatement requestQuery = conn.prepareStatement(query);
@@ -561,8 +559,8 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                 UpdateStatement.executeUpdate();
             }
             String query2 = "INSERT INTO public.sales_log(\n" +
-                    "\"PID\", \"State\", \"Price\", \"AccountID\")\n" +
-                    "select \"ProductID\" as \"PID\",\"State\", \"Quantity\"*Cast(\"Price\" as bigint) as \"Price\", a.\"AccountID\"\n" +
+                    "\"PID\", \"State\", \"Price\", \"Timestamp\", \"ChangeType\")\n" +
+                    "select \"ProductID\" as \"PID\",\"State\", \"Quantity\"*Cast(\"Price\" as bigint) as \"Price\", CURRENT_TIMESTAMP, 'r'\n" +
                     "from (select \"TotalPrice\", \"AccountID\", \"ProductID\", \"Quantity\", \"Price\" from\n" +
                     "order_history oh inner join order_history_products ohp on oh.\"OrderHistoryID\" = ohp.\"OrderHistoryID\") totals\n" +
                     "inner join accounts a on totals.\"AccountID\" = a.\"AccountID\"";
@@ -654,7 +652,6 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
                     Map<String, String> tempMap = new HashMap<>();
                     tempMap.put("id", String.valueOf(rset.getInt("ProductID")));
                     tempMap.put("value", rset.getString("Name") + " ($" + String.valueOf(rset.getLong("productprice")) + ")");
-                    tempArray.add(tempMap);
                     firstTimeArray.add(tempMap);
                 }
                 Map<String, String> tempMap = new HashMap<>();
@@ -670,37 +667,29 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
         return rValue;
     }
 
-    private JSONArray findLogs(int AccountID) {
-        String query = "select \"ProductID\", \"State\", cell_sum, totalprice, coalesce(productprice, 0)\n" +
-                "from (select header, \"ProductID\", \"Name\", cell_sum, totalprice, productprice\n" +
-                "from (select header, \"ProductID\", \"Name\", cell_sum, totalprice, productprice, row_number() over (partition by header order by productprice DESC)\n" +
-                "from precomp\n" +
-                "group by \"ProductID\", header, \"Name\", cell_sum, totalprice, productprice\n" +
-                "order by totalprice desc, header, productprice desc) as subquery\n" +
-                "where row_number <= 50) st inner join sales_log sl on st.\"ProductID\" = sl.\"PID\"";
+    private JSONArray findLogs(long timestamp) {
+        String query = "select \"PID\", coalesce(\"State\", 'Alabama') as \"State\", sum(CAST(\"Price\" as bigint)) as price, \"ChangeType\"\n" +
+                "from sales_log\n" +
+                "where \"Timestamp\" > ?\n" +
+                "group by \"PID\", \"State\", \"ChangeType\"";
         JSONArray rArray = new JSONArray();
         try {
             PreparedStatement requestQuery = conn.prepareStatement(query);
-            requestQuery.setInt(1, AccountID);
+            requestQuery.setTimestamp(1, new Timestamp(timestamp));
             ResultSet rset = requestQuery.executeQuery();
             while (rset.next()) {
                 JSONObject tempObj = new JSONObject();
-                String changeType = "";
-                if (rset.getInt("productprice") == 0) {
-                    changeType = "p";
-                } else {
-                    changeType = "r";
-                }
-                tempObj.put("Type", changeType);
+                tempObj.put("Type", rset.getString("ChangeType"));
                 tempObj.put("State", rset.getString("State"));
-                tempObj.put("PID", rset.getInt("ProductID"));
-                tempObj.put("Value", rset.getInt("cell_sum"));
+                tempObj.put("PID", rset.getInt("PID"));
+                tempObj.put("Value", rset.getInt("price"));
                 rArray.put(tempObj);
             }
         } catch (Exception e) {
             e.printStackTrace();
             return rArray;
         }
+        System.out.println(rArray.toString());
         return rArray;
     }
 
@@ -813,8 +802,9 @@ public class Servlet extends HttpServlet implements HttpSessionListener {
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (request.getParameter("func").equals("refresh")) {
+            System.out.println(request.getParameter("date"));
             //JSONArray responseValue = findLogs((int) request.getSession().getAttribute("AccountID"));
-            JSONArray rValue = findLogs((int) request.getSession().getAttribute("AccountID"));
+            JSONArray rValue = findLogs(Long.valueOf(request.getParameter("date")));
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write(rValue.toString());
