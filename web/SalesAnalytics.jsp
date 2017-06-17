@@ -91,6 +91,21 @@
                         }
                     }
                 }
+                $("#itemsChanged").text("")
+                if(refreshIDArr.length > 0) {
+                    $("#itemsChanged").text("Top 50 products changed, items no longer in top 50: ");
+                    for (index = 0; index < refreshIDArr.length; ++index) {
+                        var val = refreshIDArr[index];
+
+                        if ($.inArray(val, productIDArr) == -1) {
+                            val = parseInt(val) -1;
+                            var currentText = $("#itemsChanged").text();
+                            $("#itemsChanged").text(currentText + val + ", ")
+                            //make purple, we have found a product that is no longer in the top 50
+                            //remove red, add purple
+                        }
+                    }
+                }
 
             });
 
@@ -190,7 +205,9 @@
     <input type="number" style="width:300px;" id="numOrders"/>
     <br/>
     <br/>
-
+        <p id="itemsChanged"></p>
+        <br/>
+        <br/>
     <table class="displayTable" id="displayTable">
         <c:forEach items="${displayTableRows}" var="displayTable">
             <tr class="displayTable">
